@@ -1,0 +1,3 @@
+hosts:
+  - "zk01:2181"
+path: "/lighthouse/services"

@@ -1,0 +1,5 @@
+discovery: "zookeeper"
+haproxy:
+  port: 8000
+  backend:
+    - "mode http"

@@ -1,0 +1,9 @@
+host: "localhost"
+port: 8000
+discovery: "zookeeper"
+checks:
+  interval: 3
+  http:
+    rise: 1
+    fall: 2
+    uri: "/health"

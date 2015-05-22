@@ -1,0 +1,23 @@
+config_file: "/etc/haproxy.cfg"
+socket_file: "/var/run/haproxy.sock"
+meta_clusters:
+  stuff_api:
+    port: 8080
+    frontend:
+      - "mode http"
+global:
+  - "daemon"
+  - "maxconn 4000"
+  - "log /dev/log local0"
+  - "log /dev/log local1 notice"
+defaults:
+  - "balance roundrobin"
+  - "timeout connect 10s"
+  - "timeout client 20s"
+  - "timeout server 20s"
+stats:
+  port: 9009
+  uri: "/haproxy"
+  timeouts:
+    connect: 4000
+    server: 30000

@@ -1,0 +1,8 @@
+port: 8000
+discovery: "zookeeper"
+checks:
+  interval: 2
+  http:
+    rise: 2
+    fall: 3
+    uri: "/health"

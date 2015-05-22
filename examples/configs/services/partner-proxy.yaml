@@ -1,0 +1,9 @@
+name: "proxy"
+port: 7777
+discovery: "zookeeper"
+checks:
+  interval: 3
+  http:
+    uri: "/status"
+    rise: 1
+    fall: 4

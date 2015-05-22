@@ -1,0 +1,6 @@
+discovery: "zookeeper"
+meta_cluster: "stuff_api"
+haproxy:
+  acl: "path_beg /api/widgets"
+  backend:
+    - "mode http"

@@ -1,0 +1,6 @@
+Zookeeper
+===========
+
+.. toctree::
+
+   modules/zookeeper

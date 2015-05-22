@@ -1,0 +1,9 @@
+discovery: "zookeeper"
+haproxy:
+  port: 9999
+  frontend:
+    - "option tcplog"
+    - "log global"
+  backend:
+    - "mode tcp"
+    - "balance source"
