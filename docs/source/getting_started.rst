@@ -73,7 +73,7 @@ Configuration
 The next step will of course be customizing your own :doc:`configuration`.
 
 
-.. _PyPI: http://pypi.python.org/lighthouse
+.. _PyPI: http://pypi.python.org/pypi/lighthouse
 .. _PyPy: http://pypy.org
 .. _Watchdog: https://pythonhosted.org/watchdog/
 .. _PyYAML: http://pyyaml.org
