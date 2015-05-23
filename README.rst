@@ -19,17 +19,6 @@ resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
 SmartStack_ solution.  Out of the box it supports discovery via Zookeeper_ with
 cluster load balancing handled by an automatically configured HAProxy_.
 
-.. raw:: html
-
-    <style>
-      .appcode { color: "#f07e80" }
-      .writer { color: "#e680fe" }
-      .reporter { color: "#87abdf" }
-      .others { color: "#cdcdcd" }
-      .balancer { color: "#b0eab0" }
-      .discovery { color: "#abccfd" }
-    </style>
-
 Documentation
 ~~~~~~~~~~~~~~
 
@@ -47,28 +36,18 @@ script and (usually) the `lighthouse-reporter` script.
    :alt: Diagram of a node
    :align: center
 
-.. role:: appcode
-.. role:: writer
-.. role:: reporter
-.. role:: others
-.. role:: balancer
-.. role:: discovery
+In a Lighthouse setup, no node's application code is aware of the existence of
+other nodes, they talk to a local port handled by an instance of the load
+balancer which in turn routes traffice among the various known other nodes.
 
-In a Lighthouse setup, no node's :appcode:`application code` is aware of the
-existence of :others:`other nodes`, they talk to a local port handled by
-:balancer:`an instance of the load balancer` which in turn routes traffic among
-the :others:`various known other nodes`.
+This local load balancer is automatically updated when nodes come and go
+via the `lighthouse-writer` script, which talks to the discovery method (e.g.
+Zookeeper) to keep track of which nodes on which clusters are up.
 
-This :balancer:`local load balancer` is automatically updated when nodes come and
-go via the :writer:`lighthouse-writer` script, which talks to the
-:discovery:`discovery method` (e.g. Zookeeper) to keep track of which nodes on
-which clusters are up.
-
-The :reporter:`lighthouse-reporter` script likewise talks to the
-:discovery:`discovery method`, it is responsible for running health checks on any
-:appcode:`services on the local node` and reports to the
-:discovery:`discovery method` that the healthy services are up and the unhealthy
-ones are down.
+The `lighthouse-reporter` script likewise talks to the discovery method, it
+it is responsible for running health checks on any services on the local
+node and reports to the discovery method that the healthy services are up
+and the unhealthy ones are down.
 
 
 Development
