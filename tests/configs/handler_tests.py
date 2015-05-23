@@ -90,7 +90,7 @@ class ConfigChangeHandlerTests(unittest.TestCase):
         on_delete = Mock()
 
         target_class = Mock()
-        target_class.from_config.side_effect = Exception
+        target_class.from_config.side_effect = Exception("oh no!")
 
         handler = ConfigFileChangeHandler(
             target_class, on_add, on_update, on_delete
