@@ -80,8 +80,9 @@ class ConfigChangeHandlerTests(unittest.TestCase):
             "service", {"port": 8888, "extras": ["foo", "bar"]}
         )
 
+    @patch("lighthouse.configs.handler.logger")
     @patch("lighthouse.configs.handler.yaml")
-    def test_on_created_generic_error(self, yaml):
+    def test_on_created_generic_error(self, yaml, mock_logger):
         yaml.load.return_value = {"port": 8888, "extras": ["foo", "bar"]}
         created_event = Mock(src_path="/foo/bar/service.yaml")
 
@@ -103,6 +104,8 @@ class ConfigChangeHandlerTests(unittest.TestCase):
         assert on_add.called is False
         assert on_update.called is False
         assert on_delete.called is False
+
+        self.assertEqual(mock_logger.exception.call_count, 1)
 
     @patch("lighthouse.configs.handler.yaml")
     def test_on_created(self, yaml):
