@@ -28,8 +28,8 @@ Overview
 ~~~~~~~~~
 
 A lighthouse setup consists of three parts running locally on each node: a load
-balancer (as of right now only HAProxy 1.5 is supported), the `lighthouse-writer`
-script and (usually) the `lighthouse-reporter` script.
+balancer, the `lighthouse-writer` script and (usually) the `lighthouse-reporter`
+script.
 
 .. image::
    http://lighthouse.readthedocs.org/en/latest/_images/soa_node.png
