@@ -124,34 +124,9 @@ class ConfigChangeHandlerTests(unittest.TestCase):
 
         mock_os.path.isdir.assert_called_once_with("/foo/bar")
 
+    @patch("lighthouse.configs.handler.logger")
     @patch("lighthouse.configs.handler.yaml")
-    def test_on_modified_config_error(self, yaml):
-        yaml.load.return_value = {"port": 8888, "extras": ["foo", "bar"]}
-        modified_event = Mock(src_path="/foo/bar/service.yaml")
-
-        on_add = Mock()
-        on_update = Mock()
-        on_delete = Mock()
-
-        target_class = Mock()
-        target_class.from_config.side_effect = ValueError
-
-        handler = ConfigFileChangeHandler(
-            target_class, on_add, on_update, on_delete
-        )
-
-        handler.on_modified(modified_event)
-
-        assert on_add.called is False
-        assert on_update.called is False
-        assert on_delete.called is False
-
-        target_class.from_config.assert_called_once_with(
-            "service", {"port": 8888, "extras": ["foo", "bar"]}
-        )
-
-    @patch("lighthouse.configs.handler.yaml")
-    def test_on_modified_generic_error(self, yaml):
+    def test_on_modified_generic_error(self, yaml, mock_logger):
         yaml.load.return_value = {"port": 8888, "extras": ["foo", "bar"]}
         modified_event = Mock(src_path="/foo/bar/service.yaml")
 
@@ -171,6 +146,8 @@ class ConfigChangeHandlerTests(unittest.TestCase):
         assert on_add.called is False
         assert on_update.called is False
         assert on_delete.called is False
+
+        self.assertEqual(mock_logger.exception.call_count, 1)
 
     @patch("lighthouse.configs.handler.yaml")
     def test_on_modified(self, yaml):
