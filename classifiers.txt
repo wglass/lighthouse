@@ -1,0 +1,28 @@
+Development Status :: 4 - Beta
+Environment :: Console
+Environment :: MacOS X
+Environment :: No Input/Output (Daemon)
+Environment :: Plugins
+Intended Audience :: Developers
+Intended Audience :: Information Technology
+Intended Audience :: System Administrators
+License :: OSI Approved :: MIT License
+Operating System :: MacOS
+Operating System :: MacOS :: MacOS X
+Operating System :: POSIX
+Operating System :: POSIX :: Linux
+Operating System :: Unix
+Programming Language :: Python :: 2
+Programming Language :: Python :: 2.6
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: Implementation
+Programming Language :: Python :: Implementation :: CPython
+Programming Language :: Python :: Implementation :: PyPy
+Topic :: Internet
+Topic :: System
+Topic :: System :: Clustering
+Topic :: System :: Networking
+Topic :: System :: Systems Administration
+Topic :: Utilities

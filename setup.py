@@ -3,6 +3,11 @@ from setuptools import setup, find_packages
 from lighthouse import __version__
 
 
+classifiers = []
+with open("classifiers.txt") as fd:
+    classifiers = fd.readlines()
+
+
 setup(
     name="lighthouse",
     version=__version__,
@@ -44,4 +49,5 @@ setup(
         "coverage",
         "flake8",
     ],
+    classifiers=classifiers,
 )
