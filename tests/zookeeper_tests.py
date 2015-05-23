@@ -4,7 +4,6 @@ except ImportError:
     import unittest
 
 import json
-import socket
 
 from mock import patch, Mock
 
@@ -213,10 +212,13 @@ class ZookeeperTests(unittest.TestCase):
 
         self.assertEqual(zk.client.set.called, False)
 
+    @patch("lighthouse.peer.socket")
     @patch("lighthouse.node.socket")
-    def test_report_up(self, mock_socket, mock_client):
+    def test_report_up(self, mock_socket, peer_socket, mock_client):
         mock_socket.getfqdn.return_value = "redis1.int.local"
         mock_socket.gethostbyname.return_value = "10.0.1.8"
+        peer_socket.getfqdn.return_value = "redis1.int.local"
+        peer_socket.gethostbyname.return_value = "10.0.1.8"
 
         zk = ZookeeperDiscovery()
         zk.apply_config(
@@ -247,16 +249,19 @@ class ZookeeperTests(unittest.TestCase):
                 "metadata": {"type": "master"},
                 "peer": {
                     "port": 1024,
-                    "name": socket.gethostname(),
-                    "ip": socket.gethostbyname(socket.gethostname()),
+                    "name": "redis1.int.local",
+                    "ip": "10.0.1.8"
                 }
             }
         )
 
+    @patch("lighthouse.peer.socket")
     @patch("lighthouse.node.socket")
-    def test_report_up_no_such_node(self, mock_socket, mock_client):
+    def test_report_up__no_node(self, mock_socket, peer_socket, mock_client):
         mock_socket.getfqdn.return_value = "redis1.int.local"
         mock_socket.gethostbyname.return_value = "10.0.1.8"
+        peer_socket.getfqdn.return_value = "redis1.int.local"
+        peer_socket.gethostbyname.return_value = "10.0.1.8"
 
         zk = ZookeeperDiscovery()
         zk.apply_config(
@@ -295,8 +300,8 @@ class ZookeeperTests(unittest.TestCase):
                 "metadata": {},
                 "peer": {
                     "port": 1024,
-                    "name": socket.gethostname(),
-                    "ip": socket.gethostbyname(socket.gethostname()),
+                    "name": "redis1.int.local",
+                    "ip": "10.0.1.8",
                 }
             }
         )
