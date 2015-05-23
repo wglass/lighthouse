@@ -18,9 +18,9 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import alabaster
-import sphinx_rtd_theme
-
 import lighthouse
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- General configuration ------------------------------------------------
 
@@ -35,8 +35,9 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.extlinks',
-    'sphinxcontrib.spelling',
 ]
+if not on_rtd:
+    extensions.append("sphinxcontrib.spelling")
 
 templates_path = ['templates']
 
