@@ -2,7 +2,7 @@
 *.egg-info
 .coverage
 .tox
-docs/build
+.docbuild
 *.egg
 build
 dist
