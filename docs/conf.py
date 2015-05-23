@@ -107,7 +107,6 @@ html_theme_options = {
     "github_repo": "lighthouse",
     "github_banner": True,
     "github_button": False,
-    "travis_button": True,
     "analytics_id": "UA-63292568-1",
     "link": "#3782be",
     "link_hover": "#3782be",
