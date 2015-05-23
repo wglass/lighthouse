@@ -57,12 +57,6 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
             result = self.target_class.from_config(
                 name, yaml.load(open(event.src_path))
             )
-        except ValueError as e:
-            logger.error(
-                "Error when loading new config file %s: %s",
-                event.src_path, str(e)
-            )
-            return
         except Exception as e:
             logger.exception(
                 "Error when loading new config file %s: %s",
