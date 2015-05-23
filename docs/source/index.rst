@@ -4,7 +4,7 @@ Lighthouse Service Discovery Tool
 =================================
 
 Lighthouse is a service node discovery system written in python, built with
-resilience, flexibility and easy-of-use in mind and inspired by Airbnb's
+resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
 SmartStack_ solution.  Out of the box it supports discovery via Zookeeper_ with
 cluster load balancing handled by an automatically configured HAProxy_.
 
