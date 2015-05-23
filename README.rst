@@ -34,6 +34,7 @@ script and (usually) the `lighthouse-reporter` script.
 .. image::
    http://lighthouse.readthedocs.org/en/latest/_images/soa_node.png
    :alt: Diagram of a node
+   :align: center
 
 In a Lighthouse setup, no node's application code is aware of the existence of
 other nodes, they talk to a local port handled by an instance of the load
