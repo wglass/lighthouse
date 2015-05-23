@@ -8,7 +8,8 @@ resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
 SmartStack_ solution.  Out of the box it supports discovery via Zookeeper_ with
 cluster load balancing handled by an automatically configured HAProxy_.
 
-To jump right in, see the :doc:`getting_started` page.
+To jump right in see the :doc:`getting_started` page, or if you'd like to see
+it in action check out the :doc:`examples` page.
 
 Overview
 ~~~~~~~~
