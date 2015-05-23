@@ -156,7 +156,7 @@ html_sidebars = {
 
 extlinks = {
     "current_tarball": (
-        "https://pypi.python.org/packages/source/l/lighthouse-%s.tar.g%%s" % version,
+        "https://pypi.python.org/packages/source/l/lighthouse/lighthouse-%s.tar.g%%s" % version,
         "lighthouse-%s.tar.g" % version
     )
 }
