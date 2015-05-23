@@ -64,7 +64,8 @@ class HAProxy(Balancer):
     @classmethod
     def validate_proxies_config(cls, proxies):
         """
-        Specific config validator for the "proxies" portion of a config.
+        Specific config validation method for the "proxies" portion of a
+        config.
 
         Checks that each proxy defines a port and a list of `upstreams`,
         and that each upstream entry has a host and port defined.

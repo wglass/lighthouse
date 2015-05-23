@@ -29,7 +29,7 @@ class Configurable(object):
         Setting instance attributes, for example.  Subclasses are expected
         to define this method.
 
-        NOTE: It is *incredibly important* that this method be idempodent with
+        NOTE: It is *incredibly important* that this method be idempotent with
         regards to the instance.
         """
         raise NotImplementedError
@@ -40,7 +40,7 @@ class Configurable(object):
         Returns a Configurable instance with the given name and config.
 
         By default this is a simple matter of calling the constructor, but
-        subclasses that are also Pluggable instances override this in order
+        subclasses that are also `Pluggable` instances override this in order
         to check that the plugin is installed correctly first.
         """
 

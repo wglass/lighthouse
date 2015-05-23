@@ -19,7 +19,7 @@ script.
 
 In a Lighthouse setup, no node's application code is aware of the existence of
 other nodes, they talk to a local port handled by an instance of the load
-balancer which in turn routes traffice among the various known other nodes.
+balancer which in turn routes traffic among the various known other nodes.
 
 This local load balancer is automatically updated when nodes come and go
 via the `lighthouse-writer` script, which talks to the discovery method (e.g.

@@ -58,7 +58,7 @@ namely a client container and the Zookeeper_ discovery method.
 Launching Zookeeper
 ~~~~~~~~~~~~~~~~~~~
 
-The zookeeper host in the cluster is expected to be named "zk01" and use the
+The zookeeper host in the cluster is expected to be named `zk01` and use the
 standard ports, so it can be launched with::
 
   $ docker run --name zk01 -d lighthouse.examples.zk
@@ -129,7 +129,7 @@ many things like `less` and `clear` might not work quite right unless it's
 set by hand.
 
 For each node the lighthouse scripts run in debug mode and log quite a bit.
-The logfiles for the lighthouse script live under
+The log files for the lighthouse script live under
 `/var/log/supervisor/lighthouse` in the container.  The services served up
 by containers will generally put their logs under `/var/log/supervisor/`.
 
@@ -143,7 +143,7 @@ command does the job::
 
   $ docker rm -f <name>
 
-This will halt the node container and de-register it from zookeeper
+This will halt the node container and unregister it from zookeeper
 automatically.
 
 

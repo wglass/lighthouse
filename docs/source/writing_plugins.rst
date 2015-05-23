@@ -7,7 +7,7 @@ discovery methods and health checks are plugins, even the included ones!
 All that's required for creating a new plugin is to subclass the proper base
 class and add that subclass to the proper entry point in your project's setup.
 
-For example a new health check called "mycheck" might have a class called
+For example a new health check called `mycheck` might have a class called
 `MyCheck`, a subclass of :class:`lighthouse.check.Check` and added to a
 `setup.py`'s setup() call:
 

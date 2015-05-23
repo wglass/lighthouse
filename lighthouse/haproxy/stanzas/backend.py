@@ -11,7 +11,7 @@ class BackendStanza(Stanza):
     Stanza subclass representing a "backend" stanza.
 
     A backend stanza defines the nodes (or "servers") belonging to a given
-    cluster as well as how routing/load balancing betwen those nodes happens.
+    cluster as well as how routing/load balancing between those nodes happens.
 
     A given cluster can define custom directives via a list of lines in their
     haproxy config with the key "backend".

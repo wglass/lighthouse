@@ -27,7 +27,7 @@ class ZookeeperDiscovery(Discovery):
     path <base_path>/<service_name>/<node_name> will exist and the data on
     the znode is the serialized representation of the cluster node.
 
-    Theze znodes are ephemeral, so that if the lighthouse reporter reporting
+    These znodes are ephemeral, so that if the lighthouse reporter reporting
     on the node goes down (i.e. the machine they are on goes down), the znode
     will disappear and lighthouse writers will update accordingly.
     """
@@ -138,7 +138,7 @@ class ZookeeperDiscovery(Discovery):
         Launches a greenlet to asynchronously watch a cluster's associated
         znode.
 
-        Also addds the cluster to the `watched_clusters` set so that any calls
+        Also adds the cluster to the `watched_clusters` set so that any calls
         to `apply_config` re-watch the cluster appropriately.
         """
         self.watched_clusters.add(cluster)

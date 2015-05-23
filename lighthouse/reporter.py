@@ -15,7 +15,7 @@ class Reporter(ConfigWatcher):
     """
     The service node reporting class.
 
-    This config watcher manages Discovery and Service configurables.  For
+    This config watcher manages Discovery and Service configurable items.  For
     every service configured, a thread is created that periodically runs the
     service's checks and reports the current node as up or down to the
     service's chosen discovery method.
@@ -75,7 +75,7 @@ class Reporter(ConfigWatcher):
         all of the defined checks for the service.
 
         If all checks pass and the service's present node was previously
-        reported as down, the present node is reportes as up.  Conversely, if
+        reported as down, the present node is reported as up.  Conversely, if
         any of the checks fail and the service's present node was previously
         reported as up, the present node will be reported as down.
 

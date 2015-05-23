@@ -11,7 +11,7 @@ class MetaFrontendStanza(Stanza):
     Stanza subclass representing a shared "meta" cluster frontend.
 
     These frontends just contain ACL directives for routing requests to
-    separate cluster backends.  If a member cluster does not have an acl rule
+    separate cluster backends.  If a member cluster does not have an ACL rule
     defined in its haproxy config an error is logged and the member cluster
     is skipped.
     """

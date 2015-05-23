@@ -1,5 +1,5 @@
-HAproxy
-=============
+HAProxy
+=======
 
 
 .. toctree::

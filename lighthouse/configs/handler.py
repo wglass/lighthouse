@@ -43,7 +43,7 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
         Newly created config file handler.
 
         Parses the file's yaml contents and creates a new instance of the
-        target_class with the results.  Fires the on_add calback with the
+        target_class with the results.  Fires the on_add callback with the
         new instance.
         """
         if os.path.isdir(event.src_path):

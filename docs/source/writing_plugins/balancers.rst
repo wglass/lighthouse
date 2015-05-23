@@ -22,7 +22,7 @@ Examples
 
 The project includes an HAProxy balancer plugin via the
 :class:`lighthouse.haproxy.balancer.HAProxy` class.  HAProxy is a powerful
-tool with quite a bit of configurability so the support code to get the
+tool with quite a few configuration options so the support code to get the
 plugin to work is extensive.
 
 
@@ -56,10 +56,10 @@ Required Methods
 
   .. warning::
 
-     It it is *incredibly important* that this method be idempodent with regards
+     It it is *incredibly important* that this method be idempotent with regards
      to instances of your Balancer subclass.  Configurations can be altered at
      any time in any manner, sometimes with invalid values!  You want your
-     plugin's state to refect the contents of the YAML config file at all times.
+     plugin's state to reflect the contents of the YAML config file at all times.
 
 * `sync_file(self, clusters)`:
 

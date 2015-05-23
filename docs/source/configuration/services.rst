@@ -42,7 +42,7 @@ Settings
 
 * **checks** *(required)*:
 
-  A list of health checks to perform, which will determine if a serivice is up
+  A list of health checks to perform, which will determine if a service is up
   or not.
 
 * **host**:

@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.extlinks',
+    'sphinxcontrib.spelling',
 ]
 
 templates_path = ['templates']
@@ -61,6 +62,8 @@ coverage_ignore_modules = [
     "lighthouse.scripts.writer",
     "lighthouse.scripts.reporter",
 ]
+
+spelling_word_list_filename = "spelling_wordlist.txt"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

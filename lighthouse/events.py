@@ -46,7 +46,7 @@ def wait_on_event(event, timeout=None):
     Waits on a single threading Event, with an optional timeout.
 
     This is here for compatibility reasons as python 2 can't reliably wait
-    on an event without a timeout and python 3 doesn't define a maxint.
+    on an event without a timeout and python 3 doesn't define a `maxint`.
     """
     if timeout is not None:
         event.wait(timeout)

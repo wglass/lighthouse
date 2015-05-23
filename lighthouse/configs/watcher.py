@@ -20,9 +20,9 @@ class ConfigWatcher(object):
     configurable callbacks.
 
     .. warning::
-       Care must be taken that these hooks are idempodent with regards
-       to the Watcher subclass instance.  Changes to configurables are liable
-       to happen at any time and in any order.
+       Care must be taken that these hooks are idempotent with regards
+       to the Watcher subclass instance.  Configuration changes are liable to
+       happen at any time and in any order.
     """
 
     # the list or tuple of Configurable subclasses to watch
@@ -199,7 +199,7 @@ class ConfigWatcher(object):
 
     def stop(self):
         """
-        Method for shutting dow the watcher.
+        Method for shutting down the watcher.
 
         All config file observers are stopped and their threads joined, along
         with the worker thread pool.

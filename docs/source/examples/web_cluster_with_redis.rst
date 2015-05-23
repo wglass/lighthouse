@@ -25,7 +25,7 @@ Two should be fine for our purposes.
    These redis instances are independent, if a request ends up using a different
    cache than a previous one the results will be inconsistent!  This is OK here
    since this is a simple example but in the real world you'll need to be mindful
-   of how requests are routed to stateful clusters.
+   of how requests are routed to clusters that keep state.
 
 
 Creating the web cluster
@@ -41,7 +41,7 @@ up such a node::
 
   $ ./launch.sh multiapp app02
 
-This "multiapp" container will have two instances of the webapp process running,
+This `multiapp` container will have two instances of the webapp process running,
 each on different ports but reporting as part of the same cluster.
 
 With these two launched you should see three entries in the "webapp" section
@@ -75,7 +75,7 @@ So a curl to `http://<docker host ip>:33274/` would yield:
 
 
 With each subsequent request the counter will update, and HAProxy will balance
-the requests amont the three webapp nodes.
+the requests among the three webapp nodes.
 
 Going further
 ~~~~~~~~~~~~~

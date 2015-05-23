@@ -2,7 +2,7 @@ API Meta-Cluster Example
 ========================
 
 This example will demonstrate ACL-based routing where a single API is serviced
-by multiple clusters, as well as the proxyies feature of the HAProxy balancer
+by multiple clusters, as well as the proxies feature of the HAProxy balancer
 plugin.
 
 We'll have a redis-backed web API with two endpoints: one for "widgets" and one
@@ -27,7 +27,7 @@ meant to represent a 3rd-party API::
 
   $ ./launch.sh partner partnerapi
 
-Naming the container "partnerapi" is important, the configuration on the proxy
+Naming the container `partnerapi` is important, the configuration on the proxy
 cluster nodes will assume the "partner" is reachable via that name.
 
 .. note::
@@ -48,7 +48,7 @@ Naturally as this is just an example the cluster can be expanded to your heart's
 content.
 
 Proxy nodes don't run any extra services themselves, rather they configure their
-HAProxy instances to proxy to the "partnerapi" machine.  If you connect to
+HAProxy instances to proxy to the `partnerapi` machine.  If you connect to
 proxy01 and look at the `/etc/haproxy.cfg` file you should see something along
 the lines of::
 
@@ -80,7 +80,7 @@ show up in the HAProxy web interface of the client node:
 The widgets API
 ---------------
 
-The widgets API has one endpoint, "/api/widgets" that reponds to both GET and
+The widgets API has one endpoint, "/api/widgets" that responds to both GET and
 POST requests.
 
 A GET request shows a mapping of known widgets to their count, empty at first::
@@ -90,7 +90,7 @@ A GET request shows a mapping of known widgets to their count, empty at first::
     "widgets": {}
   }
 
-A POST to the endpoint requires a "widget" param set to any sort of string::
+A POST to the endpoint requires a "widget" parameter set to any sort of string::
 
   $ curl -XPOST -d "widget=foo" http://<docker_ip>:<port>/api/widgets
   {
@@ -112,7 +112,7 @@ on the client and see the traffic being balanced on the "api_widgets" backend.
 The sprockets API
 -----------------
 
-The sprockets API is similar to widgets, it has a single endpoint that reponds
+The sprockets API is similar to widgets, it has a single endpoint that responds
 to both GET and POST requests but sprockets are shown as a set rather than
 a mapping.
 
@@ -127,7 +127,7 @@ GET requests will show the set::
     "sprockets" []
   }
 
-POST requests require a "sprocket" param and will add a new sprocket to
+POST requests require a "sprocket" parameter and will add a new sprocket to
 the set::
 
   $ curl -XPOST -d"sprocket=bar" http://<docker_ip>:<port>/api/sprockets

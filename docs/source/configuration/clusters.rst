@@ -81,7 +81,7 @@ meta-service, where requests to `/api/widgets` hit the widgets cluster and
 requests to `/api/sprockets` get routed to an independent sprockets cluster.
 
 Note that it also adds the "mode http" directive to the meta cluster's frontend
-definition, a requirement for "path_beg" ACLs.  The "frontent" portion of a
+definition, a requirement for "path_beg" ACLs.  The "frontend" portion of a
 `meta_clusters` is a list of any frontend directives that should be added to
 the meta cluster's stanza.
 

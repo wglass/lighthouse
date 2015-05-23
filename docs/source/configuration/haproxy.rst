@@ -2,7 +2,7 @@ Configuring HAProxy
 ====================
 
 The configuration of HAProxy is one of the more complicated (read: flexible!)
-parts of the Lighthouse system.  Just about any setup can be accomodated, it's
+parts of the Lighthouse system.  Just about any setup can be accommodated, it's
 helpful to have an `HAProxy config reference`_ on hand.
 
 Let's start with an example:
@@ -32,7 +32,7 @@ Let's start with an example:
         server: 30000
 
 The only *required* configuration settings are the `config_file` and
-`socket_file`, but such a barebones setup is probably not what you want.  The
+`socket_file`, but such a bare-bones setup is probably not what you want.  The
 main points of configuration will be the `global` and `defaults` settings, where
 you can list any HAProxy config directives that will go under those respective
 stanzas in the generated config file.

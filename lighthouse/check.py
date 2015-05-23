@@ -56,11 +56,11 @@ class Check(Pluggable):
         Calls the `perform()` method defined by subclasses and stores the
         result in a `results` deque.
 
-        After the result is determined the `results` deque is analized to see
+        After the result is determined the `results` deque is analyzed to see
         if the `passing` flag should be updated.  If the check was considered
         passing and the previous `self.fall` number of checks failed, the check
         is updated to not be passing.  If the check was not passing and the
-        prevous `self.rise` number of checks passed, the check is updated to
+        previous `self.rise` number of checks passed, the check is updated to
         be considered passing.
         """
         logger.debug("Running %s check", self.name)
@@ -163,10 +163,10 @@ class Check(Pluggable):
 
 class deque(collections.deque):
     """
-    Custom collections.deque subclass for 2.6 compatibilty.
+    Custom collections.deque subclass for 2.6 compatibility.
 
     The python 2.6 version of the deque class doesn't support referring to
-    the maxlen attribute.
+    the `maxlen` attribute.
     """
 
     def __init__(self, iterable=(), maxlen=None):

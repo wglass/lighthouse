@@ -66,7 +66,7 @@ class Node(object):
 
         Note that `port` and `ip` and are required keys for the JSON map,
         `peer` and `host` are optional.  If `peer` is not present, the new Node
-        instancewill use the current peer.  If `host` is not present, the
+        instance will use the current peer.  If `host` is not present, the
         hostname of the given `ip` is looked up.
         """
         if getattr(value, "decode", None):

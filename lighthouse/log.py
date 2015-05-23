@@ -74,7 +74,7 @@ def color_for_thread(thread_id):
 
 class CLIHandler(logging.StreamHandler, object):
     """
-    Specalized StreamHandler that provides color output if the output is a
+    Specialized StreamHandler that provides color output if the output is a
     terminal and the colorama library is available.
     """
 

@@ -50,10 +50,10 @@ Required Methods
 
   .. warning::
 
-     It it is *incredibly important* that this method be idempodent with regards
+     It it is *incredibly important* that this method be idempotent with regards
      to instances of your Discovery subclass.  Configurations can be altered at
      any time in any manner, sometimes with invalid values!  You want your
-     plugin's state to refect the contents of the YAML config file at all times.
+     plugin's state to reflect the contents of the YAML config file at all times.
 
 
 * `connect()`:

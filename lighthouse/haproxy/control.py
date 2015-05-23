@@ -208,7 +208,7 @@ class HAProxyControl(object):
     def process_command_response(self, command, response):
         """
         Takes an HAProxy socket command and its response and either raises
-        an approprate exception or returns the formatted response.
+        an appropriate exception or returns the formatted response.
         """
         if response.startswith(b"Unknown command."):
             raise UnknownCommandError(command)
@@ -238,7 +238,7 @@ class UnknownCommandError(HAProxyControlError):
 class PermissionError(HAProxyControlError):
     """
     Exception denoting that the HAProxy control socket does not have proper
-    auth level for executing a given command.
+    authentication level for executing a given command.
 
     For example, if the socket is set up with a a level lower than "admin",
     the enable/disable server commands will fail.

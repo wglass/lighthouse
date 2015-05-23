@@ -23,7 +23,7 @@ Settings
 .. warning::
 
    Altering the "path" setting is doable, but should be avoided if at all
-   possible.  Whathever provisioning method is used to update the
+   possible.  Whatever provisioning method is used to update the
    ``zookeeper.yaml`` file is almost certainly going to leave many nodes out of
    sync at least for a time.  A situation where nodes don't agree on where to
    look for each other is indistinguishable from a large network outage.

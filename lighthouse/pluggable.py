@@ -15,7 +15,7 @@ class Pluggable(Configurable):
     `get_installed_classes` will look up any available classes associated
     with that endpoint.
 
-    Entry points used by lighthouse can be found in setup.py in the root
+    Entry points used by lighthouse can be found in `setup.py` in the root
     of the project.
     """
 
