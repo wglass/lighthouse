@@ -81,18 +81,8 @@ Health Check Settings
 Included Health Checks
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The Lighthouse project comes bundled with two health checks by default: one for
-redis-based services and one for HTTP-based services.
-
-
-Redis
-^^^^^
-
-Sends the "PING" command to the redis instance and passes if the proper "PONG"
-response is received.  The included Redis health check plugin has no extra config
-settings.  The `redis-py` library is required in order to use it::
-
-  pip install redis
+The Lighthouse project comes bundled with one health check by default, for
+HTTP-based services.
 
 
 HTTP
@@ -105,3 +95,18 @@ dependencies but does have a required extra setting:
 * **uri** *(required)*:
 
   The uri to hit with an HTTP request to perform the check (e.g. "/health")
+
+
+Optional Health Checks
+~~~~~~~~~~~~~~~~~~~~~~
+
+
+Redis
+^^^^^
+
+Sends the "PING" command to the redis instance and passes if the proper "PONG"
+response is received.  The Redis health check plugin has no extra config
+settings.  This optional plugin requires Lighthouse to be installed with the
+"redis" extra::
+
+  pip install lighthouse[redis]

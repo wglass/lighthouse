@@ -1,7 +1,7 @@
-``lighthouse.checks.redis``
+``lighthouse.redis.check``
 ==============================
 
-.. automodule:: lighthouse.checks.redis
+.. automodule:: lighthouse.redis.check
     :members:
     :undoc-members:
     :show-inheritance:
