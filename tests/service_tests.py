@@ -85,7 +85,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(service.checks, {})
 
         Check.from_config.assert_called_once_with(
-            service, "http", {"host": "localhost", "port": 8888}
+            "http", "localhost", 3333, {"host": "localhost", "port": 8888}
         )
 
     @patch("lighthouse.service.Check")

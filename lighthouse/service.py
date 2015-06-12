@@ -45,6 +45,14 @@ class Service(Configurable):
         if "discovery" not in config:
             raise ValueError("No discovery method defined.")
 
+        for check_name, check_config in six.iteritems(config["checks"]):
+            if check_name == "interval":
+                continue
+
+            Check.from_config(
+                check_name, config["host"], config["port"], check_config
+            )
+
     def apply_config(self, config):
         """
         Takes a given validated config dictionary and sets an instance
@@ -73,7 +81,7 @@ class Service(Configurable):
                     self.checks[check_name].apply_config(check_config)
                 else:
                     self.checks[check_name] = Check.from_config(
-                        self, check_name, check_config
+                        check_name, self.host, self.port, check_config
                     )
             except ValueError as e:
                 logger.error(

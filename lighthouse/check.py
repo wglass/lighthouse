@@ -150,13 +150,13 @@ class Check(Pluggable):
         cls.validate_check_config(config)
 
     @classmethod
-    def from_config(cls, service, name, config):
+    def from_config(cls, name, host, port, config):
         """
         Behaves like the base Configurable class's `from_config()` except this
         method transfers the given service's host and port to the config.
         """
-        config["host"] = service.host
-        config["port"] = service.port
+        config["host"] = host
+        config["port"] = port
 
         return super(Check, cls).from_config(name, config)
 

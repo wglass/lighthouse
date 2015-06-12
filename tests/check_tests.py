@@ -346,9 +346,8 @@ class BaseCheckTests(unittest.TestCase):
         get_installed.return_value = {
             "fakecheck": fake_check_class
         }
-        service = Mock(host="serv03", port=8001)
 
-        result = Check.from_config(service, "fakecheck", {"foo": "bar"})
+        result = Check.from_config("fakecheck", "serv03", 8001, {"foo": "bar"})
 
         self.assertEqual(result, fake_check_class.return_value)
 
@@ -366,8 +365,5 @@ class BaseCheckTests(unittest.TestCase):
 
         self.assertRaises(
             ValueError,
-            Check.from_config,
-            Mock(host="serv01", port=8888),
-            "othercheck",
-            {"foo": "bar"}
+            Check.from_config, "othercheck", "serv01", 8888, {"foo": "bar"}
         )
