@@ -5,17 +5,17 @@ except ImportError:
 
 from mock import patch
 
-from lighthouse.checks.redis import RedisCheck
+from lighthouse.redis.check import RedisCheck
 
 
-@patch("lighthouse.checks.redis.Redis", create=True)
+@patch("lighthouse.redis.check.Redis", create=True)
 class RedisCheckTests(unittest.TestCase):
 
-    @patch("lighthouse.checks.redis.redis_available", True)
+    @patch("lighthouse.redis.check.redis_available", True)
     def test_dependency_on_redis(self, StrictRedis):
         self.assertEqual(RedisCheck.validate_dependencies(), True)
 
-    @patch("lighthouse.checks.redis.redis_available", False)
+    @patch("lighthouse.redis.check.redis_available", False)
     def test_dependency_when_redis_not_available(self, StrictRedis):
         self.assertEqual(RedisCheck.validate_dependencies(), False)
 

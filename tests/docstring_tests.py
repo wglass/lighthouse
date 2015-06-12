@@ -4,7 +4,6 @@ import re
 import lighthouse.balancer
 import lighthouse.check
 import lighthouse.checks.http
-import lighthouse.checks.redis
 import lighthouse.cluster
 import lighthouse.configs.handler
 import lighthouse.configs.monitor
@@ -31,13 +30,13 @@ import lighthouse.service
 import lighthouse.writer
 import lighthouse.zookeeper
 import lighthouse.events
+import lighthouse.redis.check
 
 
 modules_to_test = (
     lighthouse.balancer,
     lighthouse.check,
     lighthouse.checks.http,
-    lighthouse.checks.redis,
     lighthouse.cluster,
     lighthouse.configs.handler,
     lighthouse.configs.monitor,
@@ -64,6 +63,7 @@ modules_to_test = (
     lighthouse.writer,
     lighthouse.zookeeper,
     lighthouse.events,
+    lighthouse.redis.check,
 )
 
 

@@ -16,6 +16,7 @@ setup(
     author_email="william.glass@gmail.com",
     url="http://github.com/wglass/lighthouse",
     license="MIT",
+    classifiers=classifiers,
     packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,
     package_data={
@@ -27,6 +28,11 @@ setup(
         "kazoo",
         "six",
     ],
+    extras_require={
+        "redis": [
+            "redis"
+        ]
+    },
     entry_points={
         "console_scripts": [
             "lighthouse-reporter = lighthouse.scripts.reporter:run",
@@ -40,7 +46,7 @@ setup(
         ],
         "lighthouse.checks": [
             "http = lighthouse.checks.http:HTTPCheck",
-            "redis = lighthouse.checks.redis:RedisCheck",
+            "redis = lighthouse.redis.check:RedisCheck [redis]",
         ]
     },
     tests_require=[
@@ -49,5 +55,5 @@ setup(
         "coverage",
         "flake8",
     ],
-    classifiers=classifiers,
+
 )

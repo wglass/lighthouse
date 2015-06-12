@@ -8,13 +8,14 @@ try:
 except ImportError:
     redis_available = False
 
-from lighthouse import check
+
+from lighthouse.check import Check
 
 
 logger = logging.getLogger(__name__)
 
 
-class RedisCheck(check.Check):
+class RedisCheck(Check):
     """
     Redis service checker.
 
