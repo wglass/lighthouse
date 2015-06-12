@@ -9,10 +9,11 @@ RUN apt-get update \
 RUN pip install supervisor
 COPY supervisord/supervisord.conf /etc/supervisord/supervisord.conf
 
-COPY lighthouse-*.tar.gz /opt/src/
+COPY lighthouse-*.tar.gz /opt/src/lighthouse.tar.gz
+RUN cd /opt/src; tar -zxvf lighthouse.tar.gz
 
 RUN virtualenv -p /usr/bin/python2.7 /opt/venvs/lighthouse
-RUN . /opt/venvs/lighthouse/bin/activate; pip install -v /opt/src/lighthouse-*.tar.gz
+RUN . /opt/venvs/lighthouse/bin/activate; cd /opt/src/lighthouse-*; pip install -e .[redis]
 
 RUN mkdir -p /var/log/supervisor/lighthouse
 COPY supervisord/lighthouse.conf /etc/supervisord/conf.d/
