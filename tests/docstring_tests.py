@@ -1,7 +1,7 @@
 import inspect
 import re
 
-import lighthouse.balancer
+import lighthouse.coordinator
 import lighthouse.check
 import lighthouse.checks.http
 import lighthouse.cluster
@@ -10,7 +10,7 @@ import lighthouse.configs.monitor
 import lighthouse.configs.watcher
 import lighthouse.configurable
 import lighthouse.discovery
-import lighthouse.haproxy.balancer
+import lighthouse.haproxy.coordinator
 import lighthouse.haproxy.config
 import lighthouse.haproxy.control
 import lighthouse.haproxy.stanzas.section
@@ -34,7 +34,7 @@ import lighthouse.redis.check
 
 
 modules_to_test = (
-    lighthouse.balancer,
+    lighthouse.coordinator,
     lighthouse.check,
     lighthouse.checks.http,
     lighthouse.cluster,
@@ -43,7 +43,7 @@ modules_to_test = (
     lighthouse.configs.watcher,
     lighthouse.configurable,
     lighthouse.discovery,
-    lighthouse.haproxy.balancer,
+    lighthouse.haproxy.coordinator,
     lighthouse.haproxy.config,
     lighthouse.haproxy.control,
     lighthouse.haproxy.stanzas.section,
