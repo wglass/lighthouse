@@ -4,6 +4,6 @@ Pluggables
 .. toctree::
 
    modules/pluggable
-   modules/balancer
+   modules/coordinator
    modules/discovery
    modules/check

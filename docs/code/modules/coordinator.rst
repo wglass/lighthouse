@@ -1,7 +1,7 @@
-``lighthouse.balancer``
+``lighthouse.coordinator``
 ==========================
 
-.. automodule:: lighthouse.balancer
+.. automodule:: lighthouse.coordinator
     :members:
     :undoc-members:
     :show-inheritance:
