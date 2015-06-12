@@ -51,14 +51,22 @@ should run just fine on any Unix-y/POSIX platform.  Native windows use is
 unsupported as UNIX sockets are required to control the load balancer, but a
 setup with cygwin is theoretically possible.
 
-**Optional Redis check**: To use the Redis health check included in the
-distribution you'll need the ``redis-py`` library installed::
 
-    pip install redis
+Optional Extras
+---------------
+
+Redis plugins
+~~~~~~~~~~~~~
+
+Lighthouse includes a "redis" extra package that comes with a health check for
+redis services.  To install an extra, use square brackets when installing
+lighthouse::
+
+  pip install lighthouse[redis]
 
 
 Examples
-----------
+--------
 
 At this point you should be ready to run the examples if you've downloaded
 them.  Simply run the ``start.sh`` script for the target example and then run
@@ -68,7 +76,7 @@ example directory.  For more details on the included examples see
 
 
 Configuration
---------------
+-------------
 
 The next step will of course be customizing your own :doc:`configuration`.
 

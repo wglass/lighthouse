@@ -12,3 +12,4 @@ Source Docs
    code/checks
    code/scripts
    code/helpers
+   code/redis
