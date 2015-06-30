@@ -29,9 +29,7 @@ setup(
         "six",
     ],
     extras_require={
-        "redis": [
-            "redis"
-        ]
+        "redis": [],
     },
     entry_points={
         "console_scripts": [
@@ -46,6 +44,7 @@ setup(
         ],
         "lighthouse.checks": [
             "http = lighthouse.checks.http:HTTPCheck",
+            "tcp = lighthouse.checks.tcp:TCPCheck",
             "redis = lighthouse.redis.check:RedisCheck [redis]",
         ]
     },
