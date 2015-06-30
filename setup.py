@@ -46,6 +46,7 @@ setup(
         ],
         "lighthouse.checks": [
             "http = lighthouse.checks.http:HTTPCheck",
+            "tcp = lighthouse.checks.tcp:TCPCheck",
             "redis = lighthouse.redis.check:RedisCheck [redis]",
         ]
     },

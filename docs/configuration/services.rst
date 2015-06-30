@@ -81,12 +81,12 @@ Health Check Settings
 Included Health Checks
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The Lighthouse project comes bundled with one health check by default, for
-HTTP-based services.
+The Lighthouse project comes bundled with a handful of health checks by default,
+including two basic ones for HTTP-based services and lower-level TCP services.
 
 
 HTTP
-^^^^^
+^^^^
 
 The HTTP health check performs a simple request to a given uri and passes if
 the response code is in the 2XX range.  The HTTP health check has no extra
@@ -95,6 +95,22 @@ dependencies but does have a required extra setting:
 * **uri** *(required)*:
 
   The uri to hit with an HTTP request to perform the check (e.g. "/health")
+
+TCP
+^^^
+
+The TCP health check can be used for services that don't use HTTP to communicate
+(e.g. redis, kafka, etc.).  The health check is configured to have a "query"
+message sent to the service and an expected "response".
+
+* **query** *(required)*:
+
+  The message to send to the port via TCP (e.g. Zookeeper's "ruok")
+
+* **response** *(required)*
+
+  Expected response from the service.  If the service responds with a different
+  message or an error happens during the process the check will fail.
 
 
 Optional Health Checks
