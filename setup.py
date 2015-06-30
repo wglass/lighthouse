@@ -29,9 +29,7 @@ setup(
         "six",
     ],
     extras_require={
-        "redis": [
-            "redis"
-        ]
+        "redis": [],
     },
     entry_points={
         "console_scripts": [
