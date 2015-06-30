@@ -1,7 +1,7 @@
 import logging
 
 from .configurable import Configurable
-from .balancer import Balancer
+from .coordinator import Coordinator
 
 
 logger = logging.getLogger(__name__)
@@ -28,24 +28,26 @@ class Cluster(Configurable):
         Validates a config dictionary parsed from a cluster config file.
 
         Checks that a discovery method is defined and that at least one of
-        the balancers in the config are installed and available.
+        the coordinators in the config are installed and available.
         """
         if "discovery" not in config:
             raise ValueError("No discovery method defined.")
 
-        installed_balancers = Balancer.get_installed_classes().keys()
+        installed_coordinators = Coordinator.get_installed_classes().keys()
 
-        if not any([balancer in config for balancer in installed_balancers]):
-            raise ValueError("No available balancer configs defined.")
+        if not any([
+            coordinator in config for coordinator in installed_coordinators
+        ]):
+            raise ValueError("No available coordinator configs defined.")
 
     def apply_config(self, config):
         """
         Sets the `discovery` and `meta_cluster` attributes, as well as the
-        configured + available balancer attributes from a given validated
+        configured + available coordinator attributes from a given validated
         config.
         """
         self.discovery = config["discovery"]
         self.meta_cluster = config.get("meta_cluster")
-        for balancer_name in Balancer.get_installed_classes().keys():
-            if balancer_name in config:
-                setattr(self, balancer_name, config[balancer_name])
+        for coordinator_name in Coordinator.get_installed_classes().keys():
+            if coordinator_name in config:
+                setattr(self, coordinator_name, config[coordinator_name])
