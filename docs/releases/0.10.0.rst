@@ -1,0 +1,15 @@
+0.10.0
+~~~~~~
+
+* Update nomenclature: "balancer" is now "coordinator", as it is a better fit
+  with what the class actually does.
+
+* The redis check is moved to an "extra".  To install it the bracket syntax must
+  be used (i.e. "pip install lighthouse[redis]").
+
+* New TCPCheck health check for services that expose a TCP command for health
+  checks, such as redis and zookeeper.
+
+* A service that has no valid health checks no longer defaults to unavailable.
+  Each round of checks fires a warning about having no checks but still reports
+  as available.
