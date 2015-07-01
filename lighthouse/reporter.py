@@ -91,11 +91,6 @@ class Reporter(ConfigWatcher):
         ):
             logger.debug("Running checks. (%s)", service.name)
 
-            if not service.checks:
-                logger.warn("No checks defined for service: %s", service.name)
-                wait_on_event(self.shutdown, timeout=service.check_interval)
-                continue
-
             if service.discovery not in self.configurables[Discovery]:
                 logger.warn(
                     "Service %s is using Unknown/unavailable discovery '%s'.",
@@ -110,6 +105,10 @@ class Reporter(ConfigWatcher):
             checks_pass = service.checks and all([
                 check.passing for check in service.checks.values()
             ])
+
+            if not service.checks:
+                logger.warn("No checks defined for service: %s", service.name)
+                checks_pass = True
 
             discovery = self.configurables[Discovery][service.discovery]
             if service.is_up in (False, None) and checks_pass:
