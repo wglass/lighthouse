@@ -19,6 +19,12 @@ class Check(Pluggable):
     entry_point = "lighthouse.checks"
 
     def __init__(self):
+        self.host = None
+        self.port = None
+
+        self.rise = None
+        self.fall = None
+
         self.results = deque()
         self.passing = False
 
