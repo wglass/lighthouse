@@ -32,7 +32,7 @@ class BaseCheckTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError,
             check.apply_check_config,
-            {"host": "serv01", "port": 1234, "rise": 1, "fall": 1}
+            {"rise": 1, "fall": 1}
         )
 
     @patch.object(Check, "validate_config", Mock())
@@ -56,38 +56,11 @@ class BaseCheckTests(unittest.TestCase):
     @patch.object(Check, "validate_check_config")
     def test_validate_config(self, check_validate):
         Check.validate_config(
-            {"host": "serv03", "port": 1235, "rise": 2, "fall": 3}
+            {"rise": 2, "fall": 3}
         )
 
         check_validate.assert_called_once_with(
-            {"host": "serv03", "port": 1235, "rise": 2, "fall": 3}
-        )
-
-    @patch.object(Check, "apply_check_config", Mock())
-    @patch.object(Check, "validate_check_config")
-    def test_validate_config_with_no_host(self, check_validate):
-        self.assertRaises(
-            ValueError,
-            Check.validate_config,
-            {"port": 1234, "rise": 1, "fall": 1}
-        )
-
-    @patch.object(Check, "apply_check_config", Mock())
-    @patch.object(Check, "validate_check_config")
-    def test_validate_config_with_no_port(self, check_validate):
-        self.assertRaises(
-            ValueError,
-            Check.validate_config,
-            {"host": "serv03", "rise": 1, "fall": 1}
-        )
-
-    @patch.object(Check, "apply_check_config", Mock())
-    @patch.object(Check, "validate_check_config")
-    def test_validate_config_with_invalid_port(self, check_validate):
-        self.assertRaises(
-            ValueError,
-            Check.validate_config,
-            {"host": "serv03", "port": "foo", "rise": 1, "fall": 1}
+            {"rise": 2, "fall": 3}
         )
 
     @patch.object(Check, "apply_check_config", Mock())
@@ -96,7 +69,7 @@ class BaseCheckTests(unittest.TestCase):
         self.assertRaises(
             ValueError,
             Check.validate_config,
-            {"host": "serv03", "port": 1234, "fall": 1}
+            {"fall": 1}
         )
 
     @patch.object(Check, "apply_check_config", Mock())
@@ -105,26 +78,14 @@ class BaseCheckTests(unittest.TestCase):
         self.assertRaises(
             ValueError,
             Check.validate_config,
-            {"host": "serv03", "port": 1234, "rise": 1}
+            {"rise": 1}
         )
-
-    @patch.object(Check, "apply_check_config", Mock())
-    @patch.object(Check, "validate_config")
-    def test_apply_config_coerces_port(self, validate):
-        check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": "1234", "rise": 3, "fall": 1}
-        )
-
-        self.assertEqual(check.port, 1234)
 
     @patch.object(Check, "apply_check_config", Mock())
     @patch.object(Check, "validate_config")
     def test_results_size_is_greater_of_rise_or_fall(self, validate):
         check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": 1234, "rise": 3, "fall": 1}
-        )
+        check.apply_config({"rise": 3, "fall": 1})
 
         self.assertEqual(len(check.results), 3)
         assert not any(list(check.results))
@@ -141,9 +102,7 @@ class BaseCheckTests(unittest.TestCase):
         perform.side_effect = get_next_fake_result
 
         check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": 1234, "rise": 3, "fall": 1}
-        )
+        check.apply_config({"rise": 3, "fall": 1})
 
         check.run()
 
@@ -188,9 +147,7 @@ class BaseCheckTests(unittest.TestCase):
         perform.return_value = True
 
         check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": 1234, "rise": 2, "fall": 1}
-        )
+        check.apply_config({"rise": 2, "fall": 1})
 
         self.assertEqual(check.passing, False)
 
@@ -214,9 +171,7 @@ class BaseCheckTests(unittest.TestCase):
         perform.side_effect = get_next_fake_result
 
         check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": 1234, "rise": 2, "fall": 2}
-        )
+        check.apply_config({"rise": 2, "fall": 2})
 
         check.run()
         check.run()
@@ -237,7 +192,7 @@ class BaseCheckTests(unittest.TestCase):
     def test_apply_config_with_higher_fall_count(self, perform):
         perform.return_value = True
 
-        config = {"host": "serv01", "port": 1234, "rise": 2, "fall": 2}
+        config = {"rise": 2, "fall": 2}
 
         check = Check()
         check.apply_config(config)
@@ -271,7 +226,7 @@ class BaseCheckTests(unittest.TestCase):
     def test_apply_config_with_lower_rise_count(self, perform):
         perform.return_value = True
 
-        config = {"host": "serv01", "port": 1234, "rise": 3, "fall": 2}
+        config = {"rise": 3, "fall": 2}
 
         check = Check()
         check.apply_config(config)
@@ -305,7 +260,7 @@ class BaseCheckTests(unittest.TestCase):
     def test_apply_config_no_change_in_max_count(self, perform):
         perform.return_value = True
 
-        config = {"host": "serv01", "port": 1234, "rise": 3, "fall": 2}
+        config = {"rise": 3, "fall": 2}
 
         check = Check()
         check.apply_config(config)
@@ -341,9 +296,7 @@ class BaseCheckTests(unittest.TestCase):
         perform.side_effect = ValueError
 
         check = Check()
-        check.apply_config(
-            {"host": "serv01", "port": 1234, "rise": 2, "fall": 2}
-        )
+        check.apply_config({"rise": 2, "fall": 2})
 
         self.assertEqual(
             list(check.results),
@@ -366,13 +319,11 @@ class BaseCheckTests(unittest.TestCase):
             "fakecheck": fake_check_class
         }
 
-        result = Check.from_config("fakecheck", "serv03", 8001, {"foo": "bar"})
+        result = Check.from_config("fakecheck", {"foo": "bar"})
 
         self.assertEqual(result, fake_check_class.return_value)
 
-        result.apply_config.assert_called_once_with(
-            {"host": "serv03", "port": 8001, "foo": "bar"}
-        )
+        result.apply_config.assert_called_once_with({"foo": "bar"})
 
     @patch.object(Check, "apply_check_config", Mock())
     @patch.object(Check, "validate_config", Mock())
@@ -384,5 +335,5 @@ class BaseCheckTests(unittest.TestCase):
 
         self.assertRaises(
             ValueError,
-            Check.from_config, "othercheck", "serv01", 8888, {"foo": "bar"}
+            Check.from_config, "othercheck", {"foo": "bar"}
         )

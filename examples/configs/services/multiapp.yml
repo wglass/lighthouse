@@ -1,6 +1,8 @@
 name: "webapp"
-port: 8002
 discovery: "zookeeper"
+ports:
+  - 8001
+  - 8002
 checks:
   interval: 2
   http:

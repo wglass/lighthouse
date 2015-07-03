@@ -31,11 +31,14 @@ setup(
     ],
     extras_require={
         "redis": [],
+        "docker": [
+            "docker-py",
+        ],
     },
     entry_points={
         "console_scripts": [
             "lighthouse-reporter = lighthouse.scripts.reporter:run",
-            "lighthouse-writer = lighthouse.scripts.writer:run"
+            "lighthouse-writer = lighthouse.scripts.writer:run",
         ],
         "lighthouse.balancers": [
             "haproxy = lighthouse.haproxy.balancer:HAProxy",

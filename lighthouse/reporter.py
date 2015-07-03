@@ -93,11 +93,31 @@ class Reporter(ConfigWatcher):
         threading.currentThread().setName("%s check loop" % service.name)
         logger.info("Starting check loop for service '%s'", service.name)
 
+        def handle_checks_result(f):
+            try:
+                came_up, went_down = f.result()
+            except Exception:
+                logger.exception("Error checking service '%s'", service.name)
+                return
+
+            if not came_up and not went_down:
+                return
+
+            discovery = self.configurables[Discovery][service.discovery]
+
+            for port in came_up:
+                logger.debug("Reporting %s, port %d up", service.name, port)
+                discovery.report_up(service, port)
+            for port in went_down:
+                logger.debug("Reporting %s, port %d down", service.name, port)
+                discovery.report_down(service, port)
+
         while (
                 service in self.configurables[Service].values()
                 and not self.shutdown.is_set()
         ):
-            self.pool.submit(self.run_checks, service)
+            self.pool.submit(self.run_checks, service)\
+                     .add_done_callback(handle_checks_result)
 
             logger.debug("sleeping for %s seconds", service.check_interval)
             wait_on_event(self.shutdown, timeout=service.check_interval)
@@ -119,28 +139,13 @@ class Reporter(ConfigWatcher):
                 "Service %s is using Unknown/unavailable discovery '%s'.",
                 service.name, service.discovery
             )
-            return
+            return set(), set()
 
-        for check in service.checks.values():
-            check.run()
+        service.update_ports()
 
-        checks_pass = service.checks and all([
-            check.passing for check in service.checks.values()
-        ])
+        came_up, went_down = service.run_checks()
 
-        if not service.checks:
-            logger.warn("No checks defined for service: %s", service.name)
-            checks_pass = True
-
-        discovery = self.configurables[Discovery][service.discovery]
-        if service.is_up in (False, None) and checks_pass:
-            logger.debug("Reporting service as up (%s)", service.name)
-            discovery.report_up(service)
-            service.is_up = True
-        elif service.is_up in (True, None) and not checks_pass:
-            logger.debug("Reporting service as down (%s)", service.name)
-            discovery.report_down(service)
-            service.is_up = False
+        return came_up, went_down
 
     def wind_down(self):
         """

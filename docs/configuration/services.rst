@@ -31,9 +31,11 @@ the service to be considered "up" and fail only once to be considered "down".
 Settings
 ~~~~~~~~
 
-* **port** *(required)*:
+* **port**/**ports** *(required)*:
 
-  Port that the local service is listening on.
+  Port(s) that the local service is listening on.  If listing multiple ports,
+  the `ports` setting must be used.  For single-port services either `port`
+  or `ports` (with a single entry) will do.
 
 * **discovery** *(required)*:
 

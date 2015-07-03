@@ -66,14 +66,14 @@ class Discovery(Pluggable):
         """
         raise NotImplementedError
 
-    def report_up(self, service):
+    def report_up(self, service, port):
         """
         This method is used to denote that the given service present on the
         current machine should be considered up and available.
         """
         raise NotImplementedError
 
-    def report_down(self, service):
+    def report_down(self, service, port):
         """
         This method is used to denote that the given service present on the
         current machine should be considered down and unavailable.

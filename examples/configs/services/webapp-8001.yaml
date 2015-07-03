@@ -1,9 +1,0 @@
-name: "webapp"
-port: 8001
-discovery: "zookeeper"
-checks:
-  interval: 2
-  http:
-    rise: 2
-    fall: 3
-    uri: "/health"

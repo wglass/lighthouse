@@ -64,7 +64,7 @@ class DiscoveryTests(unittest.TestCase):
 
         self.assertRaises(
             NotImplementedError,
-            discovery.report_up, Mock()
+            discovery.report_up, Mock(), 8000
         )
 
     def test_report_down_required(self):
@@ -72,7 +72,7 @@ class DiscoveryTests(unittest.TestCase):
 
         self.assertRaises(
             NotImplementedError,
-            discovery.report_down, Mock()
+            discovery.report_down, Mock(), 8000
         )
 
     def test_disconnect_required(self):
