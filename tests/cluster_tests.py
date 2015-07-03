@@ -20,11 +20,11 @@ class ClusterTests(unittest.TestCase):
             Cluster.validate_config, {"foo": "bar"}
         )
 
-    @patch("lighthouse.cluster.Coordinator")
-    def test_at_least_one_coordinator_section_required(self, Coordinator):
-        Coordinator.get_installed_classes.return_value = {
-            "acoordinator": Coordinator(),
-            "othercoordinator": Coordinator()
+    @patch("lighthouse.cluster.Balancer")
+    def test_at_least_one_balancer_section_required(self, Balancer):
+        Balancer.get_installed_classes.return_value = {
+            "abalancer": Balancer(),
+            "otherbalancer": Balancer()
         }
 
         self.assertRaises(
@@ -32,35 +32,35 @@ class ClusterTests(unittest.TestCase):
             Cluster.validate_config, {"discovery": "zookeeper"}
         )
 
-    @patch("lighthouse.cluster.Coordinator")
-    def test_applying_config(self, Coordinator):
-        Coordinator.get_installed_classes.return_value = {
-            "acoordinator": Coordinator(),
-            "othercoordinator": Coordinator()
+    @patch("lighthouse.cluster.Balancer")
+    def test_applying_config(self, Balancer):
+        Balancer.get_installed_classes.return_value = {
+            "abalancer": Balancer(),
+            "otherbalancer": Balancer()
         }
 
         cluster = Cluster()
         cluster.apply_config({
             "discovery": "zookeeper",
-            "acoordinator": {"foo": "bar"}
+            "abalancer": {"foo": "bar"}
         })
 
         self.assertEqual(cluster.discovery, "zookeeper")
-        self.assertEqual(cluster.acoordinator, {"foo": "bar"})
+        self.assertEqual(cluster.abalancer, {"foo": "bar"})
         self.assertEqual(cluster.meta_cluster, None)
 
-    @patch("lighthouse.cluster.Coordinator")
-    def test_optional_meta_cluster_config(self, Coordinator):
-        Coordinator.get_installed_classes.return_value = {
-            "acoordinator": Coordinator(),
-            "othercoordinator": Coordinator()
+    @patch("lighthouse.cluster.Balancer")
+    def test_optional_meta_cluster_config(self, Balancer):
+        Balancer.get_installed_classes.return_value = {
+            "abalancer": Balancer(),
+            "otherbalancer": Balancer()
         }
 
         cluster = Cluster()
         cluster.apply_config({
             "discovery": "zookeeper",
             "meta_cluster": "webapi",
-            "acoordinator": {"foo": "bar"}
+            "abalancer": {"foo": "bar"}
         })
 
         self.assertEqual(cluster.meta_cluster, "webapi")

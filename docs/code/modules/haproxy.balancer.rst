@@ -1,7 +1,7 @@
-``lighthouse.haproxy.coordinator``
+``lighthouse.haproxy.balancer``
 ==================================
 
-.. automodule:: lighthouse.haproxy.coordinator
+.. automodule:: lighthouse.haproxy.balancer
     :members:
     :undoc-members:
     :show-inheritance:

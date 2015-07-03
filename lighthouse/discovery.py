@@ -11,7 +11,7 @@ class Discovery(Pluggable):
     """
     Base class for discovery method plugins.
 
-    Unlike the `Coordinator` base class for coordinator plugins, this discovery
+    Unlike the `Balancer` base class for load balancer plugins, this discovery
     method plugin has several methods that subclasses are expected to define.
 
     Subclasses are used for both the writer process *and* the reporter process

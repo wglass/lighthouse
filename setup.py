@@ -36,8 +36,8 @@ setup(
             "lighthouse-reporter = lighthouse.scripts.reporter:run",
             "lighthouse-writer = lighthouse.scripts.writer:run"
         ],
-        "lighthouse.coordinators": [
-            "haproxy = lighthouse.haproxy.coordinator:HAProxy",
+        "lighthouse.balancers": [
+            "haproxy = lighthouse.haproxy.balancer:HAProxy",
         ],
         "lighthouse.discovery": [
             "zookeeper = lighthouse.zookeeper:ZookeeperDiscovery",

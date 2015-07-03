@@ -4,7 +4,7 @@ HAProxy
 
 .. toctree::
 
-   modules/haproxy.coordinator
+   modules/haproxy.balancer
    modules/haproxy.control
    modules/haproxy.config
    modules/haproxy.stanzas

@@ -5,7 +5,7 @@ except ImportError:
 
 from mock import Mock, call, patch
 
-from lighthouse.coordinator import Coordinator
+from lighthouse.balancer import Balancer
 from lighthouse.cluster import Cluster
 from lighthouse.discovery import Discovery
 from lighthouse.writer import Writer
@@ -45,55 +45,55 @@ class WriterTests(unittest.TestCase):
 
         writer.nodes_updated.is_set.return_value = True
 
-        coordinator = Mock()
-        coordinator.name = "coordinator"
+        balancer = Mock()
+        balancer.name = "balancer"
 
         cluster1 = Mock()
         cluster2 = Mock()
         writer.add_configurable(Cluster, "cache", cluster1)
         writer.add_configurable(Cluster, "app", cluster2)
 
-        writer.add_configurable(Coordinator, "coordinator", coordinator)
+        writer.add_configurable(Balancer, "balancer", balancer)
 
         writer.wait_for_updates()
 
-        args, kwargs = writer.configurables[Coordinator][
-            "coordinator"
+        args, kwargs = writer.configurables[Balancer][
+            "balancer"
         ].sync_file.call_args
         self.assertEqual(set(args[0]), set([cluster1, cluster2]))
 
         writer.nodes_updated.clear.assert_called_once_with()
 
-    def test_add_coordinator_sets_nodes_updated_flag(self):
+    def test_add_balancer_sets_nodes_updated_flag(self):
         writer = Writer("/etc/lighthouse")
         writer.nodes_updated = Mock()
 
-        writer.add_configurable(Coordinator, "coordinator", Mock())
+        writer.add_configurable(Balancer, "balancer", Mock())
 
         writer.nodes_updated.set.assert_called_once_with()
 
-    def test_update_coordinator_sets_nodes_updated_flag(self):
+    def test_update_balancer_sets_nodes_updated_flag(self):
         writer = Writer("/etc/lighthouse")
         writer.nodes_updated = Mock()
 
-        writer.configurables[Coordinator] = {
+        writer.configurables[Balancer] = {
             "balance": Mock()
         }
 
-        writer.update_configurable(Coordinator, "balance", {})
+        writer.update_configurable(Balancer, "balance", {})
 
         writer.nodes_updated.set.assert_called_once_with()
 
     @patch("lighthouse.writer.logger")
-    def test_remove_coordinator_logs_critical_if_none_left(self, mock_logger):
+    def test_remove_balancer_logs_critical_if_none_left(self, mock_logger):
         writer = Writer("/etc/lighthouse")
         writer.nodes_updated = Mock()
 
-        writer.configurables[Coordinator] = {
+        writer.configurables[Balancer] = {
             "balance": Mock()
         }
 
-        writer.remove_configurable(Coordinator, "balance")
+        writer.remove_configurable(Balancer, "balance")
 
         self.assertEqual(mock_logger.critical.called, True)
 

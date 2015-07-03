@@ -4,7 +4,7 @@ import time
 
 import six
 
-from lighthouse.coordinator import Coordinator
+from lighthouse.balancer import Balancer
 
 from .config import HAProxyConfig
 from .control import HAProxyControl
@@ -18,9 +18,9 @@ MIN_TIME_BETWEEN_RESTARTS = 2  # seconds
 logger = logging.getLogger(__name__)
 
 
-class HAProxy(Coordinator):
+class HAProxy(Balancer):
     """
-    The HAProxy coordinator class.
+    The HAProxy balancer class.
 
     Leverages the HAProxy control, config and stanza-related classes in order
     to keep the HAProxy config file in sync with the services and nodes
@@ -39,8 +39,8 @@ class HAProxy(Coordinator):
     @classmethod
     def validate_dependencies(cls):
         """
-        The HAProxy Coordinator doesn't use any specific python libraries so
-        there are no extra dependencies to check for.
+        The HAProxy Balancer doesn't use any specific python libraries so there
+        are no extra dependencies to check for.
         """
         return True
 

@@ -7,7 +7,7 @@ except ImportError:
 
 from mock import patch, Mock, mock_open, call
 
-from lighthouse.haproxy.coordinator import HAProxy
+from lighthouse.haproxy.balancer import HAProxy
 
 
 if sys.version_info[0] == 3:
@@ -16,9 +16,9 @@ else:
     builtin_module = "__builtin__"
 
 
-@patch("lighthouse.haproxy.coordinator.HAProxyControl")
-@patch("lighthouse.haproxy.coordinator.HAProxyConfig")
-class HAProxyCoordinatorTests(unittest.TestCase):
+@patch("lighthouse.haproxy.balancer.HAProxyControl")
+@patch("lighthouse.haproxy.balancer.HAProxyConfig")
+class HAProxyBalancerTests(unittest.TestCase):
 
     def test_config_file_required(self, Config, Control):
         self.assertRaises(
@@ -153,38 +153,38 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         self.assertEqual(value_error_raised, False)
 
     def test_restart_required_defaults_to_true(self, Config, Control):
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
 
-        self.assertTrue(coordinator.restart_required)
+        self.assertTrue(balancer.restart_required)
 
-    @patch("lighthouse.haproxy.coordinator.time")
+    @patch("lighthouse.haproxy.balancer.time")
     def test_restart_delays_if_too_soon_since_last(self,
                                                    mock_time,
                                                    Config, Control):
         mock_time.time.return_value = time.time()
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
 
-        coordinator.restart_requred = True
-        coordinator.last_restart = mock_time.time.return_value - 1
-        coordinator.restart_interval = 4
-        coordinator.restart()
+        balancer.restart_requred = True
+        balancer.last_restart = mock_time.time.return_value - 1
+        balancer.restart_interval = 4
+        balancer.restart()
 
         mock_time.sleep.assert_called_once_with(3)
 
         Control.return_value.restart.assert_called_once_with()
-        self.assertEqual(coordinator.restart_required, False)
+        self.assertEqual(balancer.restart_required, False)
 
     @patch.object(HAProxy, "restart")
     @patch.object(HAProxy, "sync_nodes")
@@ -194,17 +194,17 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         cluster1 = Mock()
         cluster2 = Mock()
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
 
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_file([cluster1, cluster2])
+        balancer.sync_file([cluster1, cluster2])
 
         sync_nodes.assert_called_once_with([cluster1, cluster2])
         self.assertEqual(restart.called, False)
@@ -216,8 +216,8 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         cluster1 = Mock()
         cluster2 = Mock()
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
@@ -227,7 +227,7 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         fake_file = mock_open()
 
         with patch(builtin_module + ".open", fake_file, create=True):
-            coordinator.sync_file([cluster1, cluster2])
+            balancer.sync_file([cluster1, cluster2])
 
         fake_file.return_value.write.assert_called_once_with(
             Config.return_value.generate.return_value
@@ -245,17 +245,17 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         cluster1 = Mock()
         cluster2 = Mock()
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
 
-        coordinator.restart_required = True
+        balancer.restart_required = True
 
-        coordinator.sync_file([cluster1, cluster2])
+        balancer.sync_file([cluster1, cluster2])
 
         restart.assert_called_once_with()
         self.assertEqual(sync_nodes.called, False)
@@ -440,18 +440,18 @@ class HAProxyCoordinatorTests(unittest.TestCase):
             ]
         }
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1, cluster2])
+        balancer.sync_nodes([cluster1, cluster2])
 
-        self.assertEqual(coordinator.restart_required, True)
+        self.assertEqual(balancer.restart_required, True)
 
     def test_sync_nodes_new_node_begets_restart(self, Config, Control):
         node1 = Mock()
@@ -466,18 +466,18 @@ class HAProxyCoordinatorTests(unittest.TestCase):
             ]
         }
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1])
+        balancer.sync_nodes([cluster1])
 
-        self.assertEqual(coordinator.restart_required, True)
+        self.assertEqual(balancer.restart_required, True)
 
     def test_sync_nodes_clusters_without_nodes(self, Config, Control):
         control = Control.return_value
@@ -506,16 +506,16 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         control.enable_node.return_value = ""
         control.disable_node.return_value = ""
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1, cluster2])
+        balancer.sync_nodes([cluster1, cluster2])
 
         control.disable_node.assert_has_calls([
             call("cluster2", "app02:8888"),
@@ -525,7 +525,7 @@ class HAProxyCoordinatorTests(unittest.TestCase):
             call("cluster1", "app01:8888"),
             call("cluster1", "app04:8888"),
         ], any_order=True)
-        self.assertEqual(coordinator.restart_required, False)
+        self.assertEqual(balancer.restart_required, False)
 
     def test_sync_nodes_enable_disable_nodes(self, Config, Control):
         control = Control.return_value
@@ -558,16 +558,16 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         control.enable_node.return_value = ""
         control.disable_node.return_value = ""
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1, cluster2])
+        balancer.sync_nodes([cluster1, cluster2])
 
         control.disable_node.assert_has_calls([
             call("cluster2", "app03:8888"),
@@ -577,7 +577,7 @@ class HAProxyCoordinatorTests(unittest.TestCase):
             call("cluster1", "app01:8888"),
             call("cluster1", "app04:8888"),
         ], any_order=True)
-        self.assertEqual(coordinator.restart_required, True)
+        self.assertEqual(balancer.restart_required, True)
 
     def test_sync_nodes_error_with_command(self, Config, Control):
         control = Control.return_value
@@ -606,21 +606,21 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         control.enable_node.return_value = ""
         control.disable_node.return_value = "Something went wrong."
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1, cluster2])
+        balancer.sync_nodes([cluster1, cluster2])
 
         control.disable_node.assert_has_calls([
             call("cluster2", "app02:8888"),
         ])
-        self.assertEqual(coordinator.restart_required, True)
+        self.assertEqual(balancer.restart_required, True)
 
     def test_sync_nodes_exception_with_command(self, Config, Control):
         control = Control.return_value
@@ -649,16 +649,16 @@ class HAProxyCoordinatorTests(unittest.TestCase):
         control.enable_node.side_effect = Exception("something went wrong")
         control.disable_node.return_value = ""
 
-        coordinator = HAProxy()
-        coordinator.apply_config(
+        balancer = HAProxy()
+        balancer.apply_config(
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
             }
         )
-        coordinator.restart_required = False
+        balancer.restart_required = False
 
-        coordinator.sync_nodes([cluster1, cluster2])
+        balancer.sync_nodes([cluster1, cluster2])
 
         control.disable_node.assert_has_calls([
             call("cluster2", "app02:8888"),
@@ -667,4 +667,4 @@ class HAProxyCoordinatorTests(unittest.TestCase):
             call("cluster1", "app01:8888"),
             call("cluster1", "app04:8888"),
         ], any_order=True)
-        self.assertEqual(coordinator.restart_required, True)
+        self.assertEqual(balancer.restart_required, True)
