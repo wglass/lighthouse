@@ -106,7 +106,7 @@ class Check(Pluggable):
         matches the required length.
         """
         self.host = config["host"]
-        self.port = config["port"]
+        self.port = int(config["port"])
         self.rise = config["rise"]
         self.fall = config["fall"]
 
@@ -147,6 +147,11 @@ class Check(Pluggable):
         if "fall" not in config:
             raise ValueError("No 'fall' configured")
 
+        try:
+            int(config["port"])
+        except Exception:
+            raise ValueError("Invalid value for 'port'")
+
         cls.validate_check_config(config)
 
     @classmethod
@@ -156,7 +161,7 @@ class Check(Pluggable):
         method transfers the given service's host and port to the config.
         """
         config["host"] = host
-        config["port"] = port
+        config["port"] = int(port)
 
         return super(Check, cls).from_config(name, config)
 

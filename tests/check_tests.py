@@ -83,6 +83,15 @@ class BaseCheckTests(unittest.TestCase):
 
     @patch.object(Check, "apply_check_config", Mock())
     @patch.object(Check, "validate_check_config")
+    def test_validate_config_with_invalid_port(self, check_validate):
+        self.assertRaises(
+            ValueError,
+            Check.validate_config,
+            {"host": "serv03", "port": "foo", "rise": 1, "fall": 1}
+        )
+
+    @patch.object(Check, "apply_check_config", Mock())
+    @patch.object(Check, "validate_check_config")
     def test_validate_config_with_no_rise(self, check_validate):
         self.assertRaises(
             ValueError,
@@ -98,6 +107,16 @@ class BaseCheckTests(unittest.TestCase):
             Check.validate_config,
             {"host": "serv03", "port": 1234, "rise": 1}
         )
+
+    @patch.object(Check, "apply_check_config", Mock())
+    @patch.object(Check, "validate_config")
+    def test_apply_config_coerces_port(self, validate):
+        check = Check()
+        check.apply_config(
+            {"host": "serv01", "port": "1234", "rise": 3, "fall": 1}
+        )
+
+        self.assertEqual(check.port, 1234)
 
     @patch.object(Check, "apply_check_config", Mock())
     @patch.object(Check, "validate_config")
