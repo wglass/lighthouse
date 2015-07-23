@@ -1,0 +1,9 @@
+0.11.0
+~~~~~~
+
+* Revert update of the "balancer" nomenclature.  Any sort of updates to go beyond
+  using load balancers is a long way off and it's best not to get ahead of
+  ourselves.
+
+* Update TCP check's query & response to be optional.  If both are omitted from
+  a config, a simple successful connection will cause the check to pass.
