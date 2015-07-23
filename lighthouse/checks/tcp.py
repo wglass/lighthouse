@@ -38,9 +38,9 @@ class TCPCheck(check.Check):
         """
         Ensures that a query and expected response are configured.
         """
-        if "query" not in config:
+        if "query" not in config and "response" in config:
             raise ValueError("Missing TCP query message.")
-        if "response" not in config:
+        if "response" not in config and "query" in config:
             raise ValueError("Missing expected TCP response message.")
 
     def apply_check_config(self, config):
@@ -48,8 +48,8 @@ class TCPCheck(check.Check):
         Takes the `query` and `response` fields from a validated config
         dictionary and sets the proper instance attributes.
         """
-        self.query = config["query"]
-        self.expected_response = config["response"]
+        self.query = config.get("query")
+        self.expected_response = config.get("response")
 
     def perform(self):
         """
@@ -65,6 +65,11 @@ class TCPCheck(check.Check):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         sock.connect((self.host, self.port))
+
+        # if no query/response is defined, a successful connection is a pass
+        if not self.query:
+            sock.close()
+            return True
 
         try:
             sock.sendall(self.query)
