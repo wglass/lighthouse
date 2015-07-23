@@ -19,19 +19,22 @@ class TCPCheckTests(unittest.TestCase):
     def test_valid_config(self, mock_socket):
         TCPCheck.validate_check_config({"query": "ruok", "response": "imok"})
 
-    def test_query_required(self, mock_socket):
+    def test_query_required_if_response_present(self, mock_socket):
         self.assertRaises(
             ValueError,
             TCPCheck.validate_check_config,
             {"response": "imok"}
         )
 
-    def test_response_required(self, mock_socket):
+    def test_response_required_if_query_present(self, mock_socket):
         self.assertRaises(
             ValueError,
             TCPCheck.validate_check_config,
             {"query": "imok"}
         )
+
+    def test_no_response_query(self, mock_socket):
+        TCPCheck.validate_check_config({})
 
     def test_apply_config(self, mock_socket):
         check = TCPCheck()
@@ -225,3 +228,20 @@ class TCPCheckTests(unittest.TestCase):
             socket.error,
             check.perform
         )
+
+    def test_connection_success_with_no_query(self, mock_socket):
+        sock = mock_socket.socket.return_value
+        sock.recv.return_value = "notok\n"
+
+        check = TCPCheck()
+        check.apply_config({
+            "host": "127.0.0.1", "port": 1234,
+            "rise": 1, "fall": 1
+        })
+
+        self.assertEqual(check.perform(), True)
+
+        assert sock.sendall.called is False
+        assert sock.recv.called is False
+
+        sock.close.assert_called_once_with()

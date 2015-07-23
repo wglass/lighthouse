@@ -31,6 +31,7 @@ import lighthouse.writer
 import lighthouse.zookeeper
 import lighthouse.events
 import lighthouse.redis.check
+import lighthouse.sockutils
 
 
 modules_to_test = (
@@ -64,6 +65,7 @@ modules_to_test = (
     lighthouse.zookeeper,
     lighthouse.events,
     lighthouse.redis.check,
+    lighthouse.sockutils
 )
 
 

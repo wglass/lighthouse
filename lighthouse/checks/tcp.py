@@ -1,8 +1,7 @@
-import errno
 import logging
 import socket
 
-from lighthouse import check
+from lighthouse import check, sockutils
 
 
 SOCKET_BUFFER_SIZE = 4096
@@ -39,9 +38,9 @@ class TCPCheck(check.Check):
         """
         Ensures that a query and expected response are configured.
         """
-        if "query" not in config:
+        if "query" not in config and "response" in config:
             raise ValueError("Missing TCP query message.")
-        if "response" not in config:
+        if "response" not in config and "query" in config:
             raise ValueError("Missing expected TCP response message.")
 
     def apply_check_config(self, config):
@@ -49,8 +48,8 @@ class TCPCheck(check.Check):
         Takes the `query` and `response` fields from a validated config
         dictionary and sets the proper instance attributes.
         """
-        self.query = config["query"]
-        self.expected_response = config["response"]
+        self.query = config.get("query")
+        self.expected_response = config.get("response")
 
     def perform(self):
         """
@@ -67,6 +66,11 @@ class TCPCheck(check.Check):
 
         sock.connect((self.host, self.port))
 
+        # if no query/response is defined, a successful connection is a pass
+        if not self.query:
+            sock.close()
+            return True
+
         try:
             sock.sendall(self.query)
         except Exception:
@@ -74,25 +78,9 @@ class TCPCheck(check.Check):
             sock.close()
             return False
 
-        response = ""
+        response, extra = sockutils.get_response(sock)
 
-        while True:
-            try:
-                chunk = sock.recv(SOCKET_BUFFER_SIZE)
-                if chunk:
-                    response += chunk
-            except socket.error as e:
-                if e.errno not in [errno.EAGAIN, errno.EINTR]:
-                    raise
-
-            if not response:
-                break
-
-            if "\n" in response:
-                response, extra = response.split("\n", 1)
-                break
-
-        logger.debug("response: %s", response)
+        logger.debug("response: %s (extra: %s)", response, extra)
 
         if response != self.expected_response:
             logger.warn(
