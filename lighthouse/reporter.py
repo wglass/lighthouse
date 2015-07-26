@@ -1,12 +1,14 @@
 import logging
-import multiprocessing.pool
 import threading
+from concurrent import futures
 
 from .configs.watcher import ConfigWatcher
 from .discovery import Discovery
 from .service import Service
 from .events import wait_on_event
 
+
+MAX_WORKER_THREADS = 8
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +28,12 @@ class Reporter(ConfigWatcher):
     def __init__(self, *args, **kwargs):
         super(Reporter, self).__init__(*args, **kwargs)
 
-        self.pool = multiprocessing.pool.ThreadPool()
+        self.check_threads = {}
+        self.pool = futures.ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
 
     def run(self):
         """
-        Since each check the reporter runs is a separate thread the main
+        Since each check loop the reporter runs is a separate thread the main
         thread does nothing and waits on the `shutdown` thread event.
         """
         logger.info("Running reporter.")
@@ -66,71 +69,90 @@ class Reporter(ConfigWatcher):
         When a new service is added, a worker thread is launched to
         periodically run the checks for that service.
         """
-        self.pool.apply_async(self.run_checks, [service])
+        self.check_threads[service.name] = threading.Thread(
+            target=self.check_loop,
+            args=(service,)
+        )
+        self.check_threads[service.name].start()
 
-    def run_checks(self, service):
+    def on_service_remove(self, name):
+        """
+        If a service is removed, the associated check loop thread is joined
+        and removed from the `check_threads` dictionary.
+        """
+        self.check_threads[name].join()
+        del self.check_threads[name]
+
+    def check_loop(self, service):
         """
         While the reporter is not shutting down and the service being checked
-        is present in the reporter's configuration, this method will run
-        all of the defined checks for the service.
-
-        If all checks pass and the service's present node was previously
-        reported as down, the present node is reported as up.  Conversely, if
-        any of the checks fail and the service's present node was previously
-        reported as up, the present node will be reported as down.
-
-        Rests for an interval defined on the service between each check
-        run.
+        is present in the reporter's configuration, this method will launch a
+        job to run all of the service's checks and then pause for the
+        configured interval.
         """
-        threading.currentThread().setName("%s check" % service.name)
-        logger.info("Starting check run for service '%s'", service.name)
+        threading.currentThread().setName("%s check loop" % service.name)
+        logger.info("Starting check loop for service '%s'", service.name)
 
         while (
                 service in self.configurables[Service].values()
                 and not self.shutdown.is_set()
         ):
-            logger.debug("Running checks. (%s)", service.name)
-
-            if service.discovery not in self.configurables[Discovery]:
-                logger.warn(
-                    "Service %s is using Unknown/unavailable discovery '%s'.",
-                    service.name, service.discovery
-                )
-                wait_on_event(self.shutdown, timeout=service.check_interval)
-                continue
-
-            for check in service.checks.values():
-                check.run()
-
-            checks_pass = service.checks and all([
-                check.passing for check in service.checks.values()
-            ])
-
-            if not service.checks:
-                logger.warn("No checks defined for service: %s", service.name)
-                checks_pass = True
-
-            discovery = self.configurables[Discovery][service.discovery]
-            if service.is_up in (False, None) and checks_pass:
-                logger.debug("Reporting service as up (%s)", service.name)
-                discovery.report_up(service)
-                service.is_up = True
-            elif service.is_up in (True, None) and not checks_pass:
-                logger.debug("Reporting service as down (%s)", service.name)
-                discovery.report_down(service)
-                service.is_up = False
+            self.pool.submit(self.run_checks, service)
 
             logger.debug("sleeping for %s seconds", service.check_interval)
             wait_on_event(self.shutdown, timeout=service.check_interval)
 
+    def run_checks(self, service):
+        """
+        Runs each check for the service and reports to the service's discovery
+        method based on the results.
+
+        If all checks pass and the service's present node was previously
+        reported as down, the present node is reported as up.  Conversely, if
+        any of the checks fail and the service's present node was previously
+        reported as up, the present node will be reported as down.
+        """
+        logger.debug("Running checks. (%s)", service.name)
+
+        if service.discovery not in self.configurables[Discovery]:
+            logger.warn(
+                "Service %s is using Unknown/unavailable discovery '%s'.",
+                service.name, service.discovery
+            )
+            return
+
+        for check in service.checks.values():
+            check.run()
+
+        checks_pass = service.checks and all([
+            check.passing for check in service.checks.values()
+        ])
+
+        if not service.checks:
+            logger.warn("No checks defined for service: %s", service.name)
+            checks_pass = True
+
+        discovery = self.configurables[Discovery][service.discovery]
+        if service.is_up in (False, None) and checks_pass:
+            logger.debug("Reporting service as up (%s)", service.name)
+            discovery.report_up(service)
+            service.is_up = True
+        elif service.is_up in (True, None) and not checks_pass:
+            logger.debug("Reporting service as down (%s)", service.name)
+            discovery.report_down(service)
+            service.is_up = False
+
     def wind_down(self):
         """
-        Winds down the reporter by stopping any discovery method instances.
+        Winds down the reporter by stopping any discovery method instances and
+        joining any running threads.
 
-        The various checks being run are part of the worker thread pool, which
-        is taken care of in the base ConfigWatcher's `stop()` method.
+        The base ConfigWatcher's `stop()` method sets the shutdown event so
+        each check loop thread should eventually stop cleanly.
         """
         for discovery in self.configurables[Discovery].values():
             discovery.stop()
-        self.pool.close()
-        self.pool.join()
+        for thread in self.check_threads.values():
+            thread.join()
+
+        self.pool.shutdown()

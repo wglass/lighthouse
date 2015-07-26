@@ -20,8 +20,8 @@ class ReporterTests(unittest.TestCase):
 
         wait_on_event.assert_called_once_with(reporter.shutdown)
 
-    @patch("lighthouse.reporter.multiprocessing.pool.ThreadPool")
-    def test_wind_down_calls_stop_on_discoveries(self, Pool):
+    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
+    def test_wind_down_calls_stop_on_discoveries(self, Executor):
         reporter = Reporter("/etc/configs")
 
         discovery1 = Mock()
@@ -37,15 +37,15 @@ class ReporterTests(unittest.TestCase):
         discovery1.stop.assert_called_once_with()
         discovery2.stop.assert_called_once_with()
 
-    @patch("lighthouse.reporter.multiprocessing.pool.ThreadPool")
-    def test_wind_down_closes_pool(self, Pool):
+    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
+    def test_wind_down_closes_pool(self, Executor):
         reporter = Reporter("/etc/configs")
 
-        self.assertEqual(reporter.pool, Pool.return_value)
+        self.assertEqual(reporter.pool, Executor.return_value)
 
         reporter.wind_down()
 
-        Pool.return_value.join.assert_called_once_with()
+        Executor.return_value.shutdown.assert_called_once_with()
 
     def test_add_discovery_calls_connect(self):
         discovery = Mock()
@@ -95,21 +95,23 @@ class ReporterTests(unittest.TestCase):
 
         discovery.stop.assert_called_once_with()
 
-    @patch("lighthouse.reporter.multiprocessing.pool.ThreadPool")
-    def test_add_service_starts_check_run_thread(self, Pool):
+    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
+    @patch("lighthouse.reporter.threading.Thread")
+    def test_add_service_starts_check_run_thread(self, Thread, Executor):
         service = Mock()
         service.name = "existing"
 
-        thread_pool = Pool.return_value
-
         reporter = Reporter("/etc/configs")
-        reporter.pool = thread_pool
 
         reporter.add_configurable(Service, "existing", service)
 
-        thread_pool.apply_async.assert_called_once_with(
-            reporter.run_checks, [service]
+        self.assertEqual(
+            reporter.check_threads["existing"], Thread.return_value
         )
+        Thread.assert_called_once_with(
+            target=reporter.check_loop, args=(service,)
+        )
+        Thread.return_value.start.assert_called_once_with()
 
     def test_run_checks_passes_if_shutdown_set(self):
         service = Mock()
@@ -147,7 +149,7 @@ class ReporterTests(unittest.TestCase):
             "a_service": service
         }
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
         wait_on_event.assert_called_once_with(
             reporter.shutdown, timeout=service.check_interval
@@ -307,7 +309,7 @@ class ReporterTests(unittest.TestCase):
             "service": service
         }
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
         wait_on_event.assert_called_once_with(
             reporter.shutdown, timeout=service.check_interval
