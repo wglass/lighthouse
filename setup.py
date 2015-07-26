@@ -27,6 +27,7 @@ setup(
         "pyyaml",
         "kazoo",
         "six",
+        "futures",
     ],
     extras_require={
         "redis": [],
