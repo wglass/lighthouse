@@ -1,0 +1,8 @@
+0.11.2
+~~~~~~
+
+* Update reporter to use a ThreadPoolExecutor rather than the older undocumented
+  ThreadPool.
+
+* Fix bug where if multiple services were present, only one would be checked and
+  reported on.
