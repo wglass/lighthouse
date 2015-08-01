@@ -3,8 +3,7 @@ FROM lighthouse.examples.base
 COPY configs/haproxy.yaml /etc/lighthouse/
 COPY configs/discovery/zookeeper.yaml /etc/lighthouse/discovery/
 COPY configs/clusters/cache.yaml /etc/lighthouse/clusters/
-COPY configs/services/webapp-8001.yaml /etc/lighthouse/services/
-COPY configs/services/webapp-8002.yaml /etc/lighthouse/services/
+COPY configs/services/multiapp.yaml /etc/lighthouse/services/
 
 RUN virtualenv -p /usr/bin/python2.7 /opt/venvs/webapp
 RUN . /opt/venvs/webapp/bin/activate; pip install flask redis

@@ -32,7 +32,7 @@ class Node(object):
         return self.host + ":" + str(self.port)
 
     @classmethod
-    def current(cls, service):
+    def current(cls, service, port):
         """
         Returns a Node instance representing the current service node.
 
@@ -43,7 +43,7 @@ class Node(object):
         return cls(
             host=host,
             ip=socket.gethostbyname(host),
-            port=service.port,
+            port=port,
             metadata=service.metadata
         )
 

@@ -62,10 +62,10 @@ class ServiceTests(unittest.TestCase):
             }
         )
 
-    def test_is_up_defaults_to_none(self):
+    def test_is_up_values_default_to_none(self):
         service = Service()
 
-        self.assertEqual(service.is_up, None)
+        self.assertEqual(service.is_up[999], None)
 
     @patch("lighthouse.service.Check")
     def test_apply_config_handles_handles_valueerror(self, Check):
@@ -78,14 +78,14 @@ class ServiceTests(unittest.TestCase):
             "discovery": "zookeeper",
             "checks": {
                 "interval": 2,
-                "http": {"host": "localhost", "port": 8888}
+                "http": {"uri": "/health"}
             }
         })
 
         self.assertEqual(service.checks, {})
 
         Check.from_config.assert_called_once_with(
-            "http", "localhost", 3333, {"host": "localhost", "port": 8888}
+            "http", {"uri": "/health"}
         )
 
     @patch("lighthouse.service.Check")
@@ -100,11 +100,11 @@ class ServiceTests(unittest.TestCase):
             "discovery": "zookeeper",
             "checks": {
                 "interval": 2,
-                "http": {"host": "localhost", "port": 8888}
+                "http": {"uri": "/health"}
             }
         })
 
-        self.assertEqual(service.checks, {"http": check})
+        self.assertEqual(service.checks[3333], {"http": check})
 
     @patch("lighthouse.service.Check")
     def test_apply_config_with_existing_check(self, Check):
@@ -114,7 +114,7 @@ class ServiceTests(unittest.TestCase):
         service = Service()
 
         service.checks = {
-            "http": check
+            3333: {"http": check}
         }
 
         service.apply_config({
@@ -123,12 +123,36 @@ class ServiceTests(unittest.TestCase):
             "discovery": "zookeeper",
             "checks": {
                 "interval": 2,
-                "http": {"host": "localhost", "port": 8888}
+                "http": {"uri": "/health"}
             }
         })
 
-        self.assertEqual(service.checks, {"http": check})
+        self.assertEqual(service.checks[3333], {"http": check})
 
-        check.apply_config.assert_called_once_with(
-            {"host": "localhost", "port": 8888}
+        Check.from_config.assert_called_once_with(
+            "http", {"uri": "/health"}
         )
+
+    @patch("lighthouse.reporter.wait_on_event")
+    def test_run_checks_runs_each_service_check(self, wait_on_event):
+        check1 = Mock()
+        check2 = Mock()
+
+        service = Service()
+        service.apply_config({
+            "host": "localhost",
+            "port": 3333,
+            "discovery": "zookeeper",
+            "checks": {
+                "interval": 2,
+                "http": {"uri": "/health"}
+            }
+        })
+        service.checks = {
+            3333: {"check1": check1, "check2": check2}
+        }
+
+        service.run_checks()
+
+        check1.run.assert_called_once_with()
+        check2.run.assert_called_once_with()

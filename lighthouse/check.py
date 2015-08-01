@@ -19,6 +19,12 @@ class Check(Pluggable):
     entry_point = "lighthouse.checks"
 
     def __init__(self):
+        self.host = None
+        self.port = None
+
+        self.rise = None
+        self.fall = None
+
         self.results = deque()
         self.passing = False
 
@@ -105,10 +111,8 @@ class Check(Pluggable):
         False results) or contract (by removing the oldest results) until it
         matches the required length.
         """
-        self.host = config["host"]
-        self.port = int(config["port"])
-        self.rise = config["rise"]
-        self.fall = config["fall"]
+        self.rise = int(config["rise"])
+        self.fall = int(config["fall"])
 
         self.apply_check_config(config)
 
@@ -138,32 +142,12 @@ class Check(Pluggable):
         check must pass before being considered passing and how many times a
         check must fail before being considered failing.
         """
-        if "host" not in config:
-            raise ValueError("No host configured")
-        if "port" not in config:
-            raise ValueError("No port configured")
         if "rise" not in config:
             raise ValueError("No 'rise' configured")
         if "fall" not in config:
             raise ValueError("No 'fall' configured")
 
-        try:
-            int(config["port"])
-        except Exception:
-            raise ValueError("Invalid value for 'port'")
-
         cls.validate_check_config(config)
-
-    @classmethod
-    def from_config(cls, name, host, port, config):
-        """
-        Behaves like the base Configurable class's `from_config()` except this
-        method transfers the given service's host and port to the config.
-        """
-        config["host"] = host
-        config["port"] = int(port)
-
-        return super(Check, cls).from_config(name, config)
 
 
 class deque(collections.deque):

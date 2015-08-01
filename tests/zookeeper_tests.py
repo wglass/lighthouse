@@ -208,7 +208,7 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.connected = False
 
-        zk.report_up(Mock())
+        zk.report_up(Mock(), 8888)
 
         self.assertEqual(zk.client.set.called, False)
 
@@ -226,10 +226,10 @@ class ZookeeperTests(unittest.TestCase):
         )
         zk.connect()
 
-        service = Mock(port="6379", metadata={"type": "master"})
+        service = Mock(metadata={"type": "master"})
         service.name = "webcache"
 
-        zk.report_up(service)
+        zk.report_up(service, 6379)
 
         set_args, set_kwargs = zk.client.set.call_args
 
@@ -245,7 +245,7 @@ class ZookeeperTests(unittest.TestCase):
             {
                 "host": "redis1.int.local",
                 "ip": "10.0.1.8",
-                "port": "6379",
+                "port": 6379,
                 "metadata": {"type": "master"},
                 "peer": {
                     "port": 1024,
@@ -271,10 +271,10 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.client.set.side_effect = exceptions.NoNodeError
 
-        service = Mock(port="6379", metadata={})
+        service = Mock(metadata={})
         service.name = "webcache"
 
-        zk.report_up(service)
+        zk.report_up(service, 6379)
 
         self.assertEqual(zk.client.create.call_count, 1)
         create_args, create_kwargs = zk.client.create.call_args
@@ -296,7 +296,7 @@ class ZookeeperTests(unittest.TestCase):
             {
                 "host": "redis1.int.local",
                 "ip": "10.0.1.8",
-                "port": "6379",
+                "port": 6379,
                 "metadata": {},
                 "peer": {
                     "port": 1024,
@@ -315,10 +315,10 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.connected = False
 
-        service = Mock(host="redis1", port="6379")
+        service = Mock(host="redis1")
         service.name = "webcache"
 
-        zk.report_down(service)
+        zk.report_down(service, 6379)
 
         self.assertEqual(zk.client.delete.called, False)
 
@@ -331,10 +331,10 @@ class ZookeeperTests(unittest.TestCase):
         )
         zk.connect()
 
-        service = Mock(port="5678")
+        service = Mock()
         service.name = "userdb"
 
-        zk.report_down(service)
+        zk.report_down(service, 5678)
 
         zk.client.delete.assert_called_once_with(
             "/lighthouse/userdb/pg01.int.local:5678"
@@ -349,10 +349,10 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.client.delete.side_effect = exceptions.NoNodeError
 
-        service = Mock(host="redis1", port="6379")
+        service = Mock(host="redis1")
         service.name = "webcache"
 
-        zk.report_down(service)
+        zk.report_down(service, 6379)
 
     @patch("lighthouse.zookeeper.threading")
     def test_start_watching(self, mock_threading, mock_client):

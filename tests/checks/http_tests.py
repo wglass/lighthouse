@@ -29,12 +29,9 @@ class HTTPCheckTests(unittest.TestCase):
         connection.getresponse.return_value.status = 200
 
         check = HTTPCheck()
-        check.apply_config(
-            {
-                "host": "localhost", "port": 9999, "uri": "/foo",
-                "rise": 1, "fall": 1
-            }
-        )
+        check.apply_config({"uri": "/foo", "rise": 1, "fall": 1})
+        check.host = "localhost"
+        check.port = 9999
 
         check.perform()
 
@@ -52,11 +49,13 @@ class HTTPCheckTests(unittest.TestCase):
         check = HTTPCheck()
         check.apply_config(
             {
-                "host": "localhost", "port": 9999, "uri": "/foo",
+                "uri": "/foo",
                 "method": "POST",
                 "rise": 1, "fall": 1
             }
         )
+        check.host = "localhost"
+        check.port = 9999
 
         check.perform()
 
@@ -69,11 +68,13 @@ class HTTPCheckTests(unittest.TestCase):
         check = HTTPCheck()
         check.apply_config(
             {
-                "host": "localhost", "port": 9999, "uri": "/foo",
+                "uri": "/foo",
                 "https": True,
                 "rise": 1, "fall": 1
             }
         )
+        check.host = "localhost"
+        check.port = 9999
 
         check.perform()
 
@@ -84,12 +85,9 @@ class HTTPCheckTests(unittest.TestCase):
         connection.getresponse.return_value.status = 200
 
         check = HTTPCheck()
-        check.apply_config(
-            {
-                "host": "localhost", "port": 9999, "uri": "/foo",
-                "rise": 1, "fall": 1
-            }
-        )
+        check.apply_config({"uri": "/foo", "rise": 1, "fall": 1})
+        check.host = "localhost"
+        check.port = 9999
 
         self.assertEqual(check.perform(), True)
 
@@ -98,12 +96,9 @@ class HTTPCheckTests(unittest.TestCase):
         connection.getresponse.return_value.status = 300
 
         check = HTTPCheck()
-        check.apply_config(
-            {
-                "host": "localhost", "port": 9999, "uri": "/foo",
-                "rise": 1, "fall": 1
-            }
-        )
+        check.apply_config({"uri": "/foo", "rise": 1, "fall": 1})
+        check.host = "localhost"
+        check.port = 9999
 
         self.assertEqual(check.perform(), False)
 
@@ -112,12 +107,9 @@ class HTTPCheckTests(unittest.TestCase):
         connection.getresponse.return_value.status = 500
 
         check = HTTPCheck()
-        check.apply_config(
-            {
-                "host": "localhost", "port": 9999, "uri": "/foo",
-                "rise": 1, "fall": 1
-            }
-        )
+        check.apply_config({"uri": "/foo", "rise": 1, "fall": 1})
+        check.host = "localhost"
+        check.port = 9999
 
         self.assertEqual(check.perform(), False)
 
@@ -126,11 +118,8 @@ class HTTPCheckTests(unittest.TestCase):
         connection.getresponse.return_value.status = 404
 
         check = HTTPCheck()
-        check.apply_config(
-            {
-                "host": "localhost", "port": 9999, "uri": "/foo",
-                "rise": 1, "fall": 1
-            }
-        )
+        check.apply_config({"uri": "/foo", "rise": 1, "fall": 1})
+        check.host = "localhost"
+        check.port = 9999
 
         self.assertEqual(check.perform(), False)

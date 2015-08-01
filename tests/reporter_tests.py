@@ -12,6 +12,32 @@ from lighthouse.reporter import Reporter
 
 class ReporterTests(unittest.TestCase):
 
+    def setUp(self):
+        super(ReporterTests, self).setUp()
+
+        futures_patcher = patch("lighthouse.reporter.futures")
+        mock_futures = futures_patcher.start()
+
+        executor = mock_futures.ThreadPoolExecutor.return_value
+
+        state = {}
+
+        def fire_immediately(cb):
+            cb(state["future"])
+
+        def create_future(fn, *args, **kwargs):
+            f = Mock()
+            f.add_done_callback.side_effect = fire_immediately
+            f.result.return_value = fn(*args, **kwargs)
+
+            state["future"] = f
+
+            return state["future"]
+
+        executor.submit.side_effect = create_future
+
+        self.addCleanup(futures_patcher.stop)
+
     @patch("lighthouse.reporter.wait_on_event")
     def test_run_waits_on_shutdown(self, wait_on_event):
         reporter = Reporter("/etc/configs")
@@ -113,30 +139,33 @@ class ReporterTests(unittest.TestCase):
         )
         Thread.return_value.start.assert_called_once_with()
 
-    def test_run_checks_passes_if_shutdown_set(self):
+    def test_check_loop_passes_if_shutdown_set(self):
         service = Mock()
         service.name = "a_service"
+        service.run_checks.return_value = (set(), set())
 
         reporter = Reporter("/etc/configs")
 
         reporter.shutdown.set()
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
-    def test_run_checks_passes_if_service_not_in_services(self):
+    def test_check_loop_passes_if_service_not_in_services(self):
         service = Mock()
         service.name = "other_service"
+        service.run_checks.return_value = (set(), set())
 
         reporter = Reporter("/etc/configs")
         reporter.configurables[Service] = {
             "a_service": Mock()
         }
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
     @patch("lighthouse.reporter.wait_on_event")
-    def test_run_checks_loops_with_check_interval(self, wait_on_event):
+    def test_check_loop_loops_with_check_interval(self, wait_on_event):
         service = Mock()
+        service.run_checks.return_value = (set(), set())
 
         reporter = Reporter("etc/configs")
 
@@ -156,48 +185,11 @@ class ReporterTests(unittest.TestCase):
         )
 
     @patch("lighthouse.reporter.wait_on_event")
-    def test_run_checks_runs_each_service_check(self, wait_on_event):
-        check1 = Mock()
-        check2 = Mock()
-
-        service = Mock()
-        service.name = "a_service"
-        service.discovery = "foobar"
-        service.checks = {
-            "check1": check1,
-            "check2": check2
-        }
-
-        reporter = Reporter("etc/configs")
-        reporter.configurables[Discovery] = {
-            "foobar": Mock()
-        }
-        reporter.configurables[Service] = {
-            "a_service": service
-        }
-
-        def set_shutdown(*args, **kwargs):
-            reporter.shutdown.set()
-
-        wait_on_event.side_effect = set_shutdown
-
-        reporter.run_checks(service)
-
-        check1.run.assert_called_once_with()
-        check2.run.assert_called_once_with()
-
-    @patch("lighthouse.reporter.wait_on_event")
     def test_run_checks_service_uses_unknown_discovery(self, wait_on_event):
-        check1 = Mock()
-        check2 = Mock()
-
         service = Mock()
         service.name = "a_service"
         service.discovery = "fake_discovery"
-        service.checks = {
-            "check1": check1,
-            "check2": check2
-        }
+        service.run_checks.return_value = (set(), set())
 
         reporter = Reporter("etc/configs")
         reporter.configurables[Discovery] = {
@@ -213,24 +205,19 @@ class ReporterTests(unittest.TestCase):
             "a_service": service
         }
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
-        assert check1.run.called is False
-        assert check2.run.called is False
+        assert service.run_check.called is False
 
     @patch("lighthouse.reporter.wait_on_event")
-    def test_run_checks_up_service_fails(self, wait_on_event):
-        check = Mock()
-        check.passing = False
-
+    def test_check_loop_up_service_fails(self, wait_on_event):
         discovery = Mock()
 
         service = Mock()
+        service.name = "app"
         service.is_up = True
         service.discovery = "disco"
-        service.checks = {
-            "check1": check,
-        }
+        service.run_checks.return_value = (set(), set([8888]))
 
         reporter = Reporter("etc/configs")
         reporter.configurables[Discovery] = {
@@ -245,24 +232,19 @@ class ReporterTests(unittest.TestCase):
 
         wait_on_event.side_effect = set_shutdown
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
-        discovery.report_down.assert_called_once_with(service)
+        discovery.report_down.assert_called_once_with(service, 8888)
 
     @patch("lighthouse.reporter.wait_on_event")
-    def test_run_checks_down_service_passes(self, wait_on_event):
-        check = Mock()
-        check.passing = True
-
+    def test_check_loop_down_service_passes(self, wait_on_event):
         discovery = Mock()
 
         service = Mock()
         service.name = "service"
         service.is_up = False
         service.discovery = "disco"
-        service.checks = {
-            "check1": check,
-        }
+        service.run_checks.return_value = (set([8888]), set())
 
         reporter = Reporter("etc/configs")
         reporter.configurables[Discovery] = {
@@ -278,15 +260,12 @@ class ReporterTests(unittest.TestCase):
             "service": service
         }
 
-        reporter.run_checks(service)
+        reporter.check_loop(service)
 
-        discovery.report_up.assert_called_once_with(service)
+        discovery.report_up.assert_called_once_with(service, 8888)
 
     @patch("lighthouse.reporter.wait_on_event")
-    def test_run_checks_with_no_checks_defined(self, wait_on_event):
-        check = Mock()
-        check.passing = True
-
+    def test_check_loop_with_no_checks_defined(self, wait_on_event):
         discovery = Mock()
 
         service = Mock()
@@ -294,6 +273,7 @@ class ReporterTests(unittest.TestCase):
         service.is_up = False
         service.discovery = "disco"
         service.checks = {}
+        service.run_checks.return_value = (set(), set())
 
         reporter = Reporter("etc/configs")
         reporter.configurables[Discovery] = {

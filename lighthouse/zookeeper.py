@@ -239,7 +239,7 @@ class ZookeeperDiscovery(Discovery):
 
         self.watched_clusters.discard(cluster)
 
-    def report_up(self, service):
+    def report_up(self, service, port):
         """
         Report the given service's present node as up by creating/updating
         its respective znode in Zookeeper and setting the znode's data to
@@ -252,7 +252,7 @@ class ZookeeperDiscovery(Discovery):
             logger.warn("Not connected to zookeeper, cannot save znode.")
             return
 
-        node = Node.current(service)
+        node = Node.current(service, port)
 
         path = self.path_of(service, node)
         data = node.serialize().encode()
@@ -267,7 +267,7 @@ class ZookeeperDiscovery(Discovery):
                 ephemeral=True, makepath=True
             )
 
-    def report_down(self, service):
+    def report_down(self, service, port):
         """
         Reports the given service's present node as down by deleting the
         node's znode in Zookeeper if the znode is present.
@@ -279,7 +279,7 @@ class ZookeeperDiscovery(Discovery):
             logger.warn("Not connected to zookeeper, cannot delete znode.")
             return
 
-        node = Node.current(service)
+        node = Node.current(service, port)
 
         path = self.path_of(service, node)
         try:
