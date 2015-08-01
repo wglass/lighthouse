@@ -2,6 +2,11 @@ import collections
 import logging
 
 import six
+try:
+    from docker import Client as DockerClient
+    docker_available = True
+except ImportError:
+    docker_available = False
 
 from .configurable import Configurable
 from .check import Check
@@ -25,6 +30,8 @@ class Service(Configurable):
         self.ports = set()
 
         self.configured_ports = None
+        self.docker_path = None
+        self.docker_image = None
 
         self.discovery = None
 
@@ -43,9 +50,14 @@ class Service(Configurable):
         """
         if "discovery" not in config:
             raise ValueError("No discovery method defined.")
-
-        if not any([item in config for item in ["port", "ports"]]):
-            raise ValueError("No port(s) defined.")
+        if not any([item in config for item in ["port", "ports", "docker"]]):
+            raise ValueError("No port(s) or docker config defined.")
+        if "docker" in config and not docker_available:
+            raise ValueError("docker-py not installed.")
+        if "docker" in config and "uri" not in config["docker"]:
+            raise ValueError("No docker URI defined.")
+        if "docker" in config and "image" not in config["docker"]:
+            raise ValueError("No docker image defined.")
 
         cls.validate_check_configs(config)
 
@@ -82,6 +94,9 @@ class Service(Configurable):
         self.host = config.get("host", "127.0.0.1")
 
         self.configured_ports = config.get("ports", [config.get("port")])
+        if "docker" in config:
+            self.docker_uri = config["docker"]["uri"]
+            self.docker_image = config["docker"]["image"]
 
         self.discovery = config["discovery"]
 
@@ -106,6 +121,10 @@ class Service(Configurable):
             except ValueError:
                 logger.error("Invalid port value: %s", port)
                 continue
+
+        if self.docker_image:
+            # fetch docker ports
+            pass
 
         self.ports = ports
 
