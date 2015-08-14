@@ -1,0 +1,8 @@
+0.12.0
+~~~~~~
+
+* Fix bug where a blank HAProxy config would be written out and not updated
+
+* Add a "multi-port" feature, service config files can now specify multiple
+  ports for use cases where multiple instances of the same service run on
+  the same machine.
