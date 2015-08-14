@@ -36,7 +36,7 @@ class Writer(ConfigWatcher):
         Runs the main thread of the writer ConfigWatcher.
 
         This merely launches a separate thread for the config-file-updating
-        loop and waits on the `shutdown` event.
+        loop and waits on thwe `shutdown` event.
         """
         logger.info("Running writer.")
 
@@ -111,12 +111,16 @@ class Writer(ConfigWatcher):
 
             discovery.start_watching(cluster)
 
+        self.nodes_updated.set()
+
     def on_discovery_remove(self, name):
         """
         When a Discovery is removed we must make sure to call its `stop()`
         method to close any connections or do any clean up.
         """
         self.configurables[Discovery][name].stop()
+
+        self.nodes_updated.set()
 
     def on_cluster_add(self, cluster):
         """
@@ -130,6 +134,8 @@ class Writer(ConfigWatcher):
         self.configurables[Discovery][cluster.discovery].start_watching(
             cluster
         )
+
+        self.nodes_updated.set()
 
     def on_cluster_update(self, name, new_config):
         """
@@ -184,6 +190,8 @@ class Writer(ConfigWatcher):
             self.configurables[Discovery][discovery_name].stop_watching(
                 self.configurables[Cluster][name]
             )
+
+        self.nodes_updated.set()
 
     def wind_down(self):
         """

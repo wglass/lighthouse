@@ -264,3 +264,41 @@ class WriterTests(unittest.TestCase):
         writer.remove_configurable(Discovery, "existing")
 
         discovery.stop.assert_called_once_with()
+
+    def test_add_cluster_triggers_node_update(self):
+        writer = Writer("/etc/lighthouse")
+        writer.nodes_updated = Mock()
+        writer.configurables[Discovery]["zk"] = Mock()
+
+        writer.add_configurable(Cluster, "webapp", Mock(discovery="zk"))
+
+        writer.nodes_updated.set.assert_called_once_with()
+
+    def test_add_discovery_triggers_node_update(self):
+        writer = Writer("/etc/lighthouse")
+        writer.nodes_updated = Mock()
+
+        writer.add_configurable(Discovery, "riak", Mock())
+
+        writer.nodes_updated.set.assert_called_once_with()
+
+    def test_remove_discovery_triggers_node_update(self):
+        writer = Writer("/etc/lighthouse")
+        writer.nodes_updated = Mock()
+        writer.configurables[Discovery]["zk"] = Mock()
+
+        writer.remove_configurable(Discovery, "zk")
+
+        writer.nodes_updated.set.assert_called_once_with()
+
+    def test_remove_cluster_triggers_node_update(self):
+        writer = Writer("/etc/lighthouse")
+        writer.nodes_updated = Mock()
+        writer.configurables = {
+            Discovery: {"zk": Mock()},
+            Cluster: {"webapp": Mock(discovery="zk")}
+        }
+
+        writer.remove_configurable(Cluster, "webapp")
+
+        writer.nodes_updated.set.assert_called_once_with()
