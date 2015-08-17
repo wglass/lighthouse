@@ -30,10 +30,12 @@ setup(
         "futures",
     ],
     extras_require={
-        "redis": [],
         "docker": [
             "docker-py",
         ],
+        "redis": [
+            "redis"
+        ]
     },
     entry_points={
         "console_scripts": [

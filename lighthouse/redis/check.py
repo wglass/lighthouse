@@ -2,13 +2,20 @@ from __future__ import absolute_import
 
 import logging
 
-from lighthouse.checks.tcp import TCPCheck
+try:
+    from redis import Redis
+    redis_available = True  # pragma: no cover
+except ImportError:
+    redis_available = False
+
+
+from lighthouse.check import Check
 
 
 logger = logging.getLogger(__name__)
 
 
-class RedisCheck(TCPCheck):
+class RedisCheck(Check):
     """
     Redis service checker.
 
@@ -16,6 +23,17 @@ class RedisCheck(TCPCheck):
     """
 
     name = "redis"
+
+    @classmethod
+    def validate_dependencies(cls):
+        """
+        Validates that the redis python library is installed.
+        """
+        if not redis_available:
+            logger.error("Redis check requires the 'redis' library.")
+            return False
+
+        return True
 
     @classmethod
     def validate_check_config(cls, config):
@@ -27,8 +45,14 @@ class RedisCheck(TCPCheck):
 
     def apply_check_config(self, config):
         """
-        This method doesn't actually use any configuration data, as the query
-        and response for redis are already established.
+        This method is a no-op as there is no redis-specific configuration
+        available.
         """
-        self.query = "PING"
-        self.expected_response = "PONG"
+        pass
+
+    def perform(self):
+        """
+        Calls the ping() method on a Redis client connected to the target host
+        and returns the result.
+        """
+        return Redis(host=self.host, port=self.port).ping()
