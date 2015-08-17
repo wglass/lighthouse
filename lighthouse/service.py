@@ -4,6 +4,7 @@ import logging
 import six
 try:
     from docker import Client as DockerClient
+    from docker.utils import kwargs_from_env
     docker_available = True
 except ImportError:
     docker_available = False
@@ -29,9 +30,10 @@ class Service(Configurable):
         self.host = None
         self.ports = set()
 
-        self.configured_ports = None
-        self.docker_path = None
+        self.configured_ports = []
+        self.docker = None
         self.docker_image = None
+        self.docker_tag = None
 
         self.discovery = None
 
@@ -52,10 +54,18 @@ class Service(Configurable):
             raise ValueError("No discovery method defined.")
         if not any([item in config for item in ["port", "ports", "docker"]]):
             raise ValueError("No port(s) or docker config defined.")
-        if "docker" in config and not docker_available:
+        if "docker" in config:
+            cls.validate_docker_config(config)
+
+    @classmethod
+    def validate_docker_config(cls, config):
+        if not docker_available:
             raise ValueError("docker-py not installed.")
-        if "docker" in config and "uri" not in config["docker"]:
-            raise ValueError("No docker URI defined.")
+        if (
+                "uri" not in config["docker"]
+                and not config["docker"].get("from_env")
+        ):
+            raise ValueError("No docker uri defined, from_env not specified.")
         if "docker" in config and "image" not in config["docker"]:
             raise ValueError("No docker image defined.")
 
@@ -93,10 +103,27 @@ class Service(Configurable):
         """
         self.host = config.get("host", "127.0.0.1")
 
-        self.configured_ports = config.get("ports", [config.get("port")])
+        if "ports" in config:
+            self.configured_ports = config["ports"]
+        elif "port" in config:
+            self.configured_ports = [config["port"]]
+
         if "docker" in config:
-            self.docker_uri = config["docker"]["uri"]
-            self.docker_image = config["docker"]["image"]
+            image = config["docker"]["image"]
+            tag = None
+            if ":" in image:
+                image, tag = image.split(":")
+
+            self.docker_image = image
+            self.docker_tag = tag
+
+            if config["docker"].get("from_env"):
+                self.docker = DockerClient(**kwargs_from_env())
+            else:
+                self.docker = DockerClient(base_url=config["docker"]["uri"])
+
+            if not config["docker"].get("verify_tls", True):
+                self.docker.verify = False
 
         self.discovery = config["discovery"]
 
@@ -122,10 +149,27 @@ class Service(Configurable):
                 logger.error("Invalid port value: %s", port)
                 continue
 
-        if self.docker_image:
-            # fetch docker ports
-            pass
+        if not self.docker:
+            self.ports = ports
+            return
 
+        try:
+            containers = self.docker.containers()
+        except Exception:
+            logger.exception("Error retrieving docker container info.")
+            return
+
+        for container in containers:
+            image, tag = container["Image"].split(":")
+            if image != self.docker_image:
+                continue
+            if self.docker_tag is not None and tag != self.docker_tag:
+                continue
+
+            for port_info in container["Ports"]:
+                ports.add(port_info["PublicPort"])
+
+        logger.debug("ports: %s", ports)
         self.ports = ports
 
     def update_checks(self, check_configs):
@@ -174,7 +218,7 @@ class Service(Configurable):
             checks = self.checks[port].values()
 
             if not checks:
-                logger.warn("No checks defined for self: %s", self.name)
+                logger.warn("No checks defined for '%s' port %s", self.name, port)
 
             for check in checks:
                 check.run()
