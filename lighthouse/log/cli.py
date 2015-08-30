@@ -107,13 +107,3 @@ class CLIHandler(logging.StreamHandler, object):
         )
 
         return formatter.format(record)
-
-
-def setup():
-    """
-    Simple function that attaches the CLIHandler to the root logger.
-    """
-    logger = logging.getLogger()
-    logger.addHandler(CLIHandler())
-
-    return logger

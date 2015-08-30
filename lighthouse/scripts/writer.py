@@ -15,11 +15,16 @@ parser.add_argument(
     "-d", "--debug", action="store_true", default=False,
     help="Turns on debugging output."
 )
+parser.add_argument(
+    "-l", "--log-config", type=str,
+    help="Config file for the logging system."
+)
 
 
 def run():
-    logger = log.setup()
     args = parser.parse_args()
+
+    logger = log.setup(args.log_config)
 
     if args.debug:
         logger.setLevel(logging.DEBUG)

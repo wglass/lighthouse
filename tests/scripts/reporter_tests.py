@@ -14,6 +14,7 @@ from lighthouse.scripts import reporter
 class ReporterScriptTests(unittest.TestCase):
 
     def test_run_handles_keyboardinterrupt(self, parser, Reporter):
+        parser.parse_args.return_value.log_config = None
         Reporter.return_value.start.side_effect = KeyboardInterrupt
 
         reporter.run()

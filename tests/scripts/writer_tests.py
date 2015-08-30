@@ -26,6 +26,7 @@ class WriterScriptTests(unittest.TestCase):
         self.reset_log_handler()
 
     def test_run_handles_keyboardinterrupt(self, parser, Writer):
+        parser.parse_args.return_value.log_config = None
         Writer.return_value.start.side_effect = KeyboardInterrupt
 
         writer.run()

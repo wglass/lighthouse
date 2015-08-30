@@ -22,6 +22,8 @@ import lighthouse.haproxy.stanzas.peers
 import lighthouse.haproxy.stanzas.proxy
 import lighthouse.haproxy.stanzas.stats
 import lighthouse.log
+import lighthouse.log.cli
+import lighthouse.log.config
 import lighthouse.node
 import lighthouse.peer
 import lighthouse.pluggable
@@ -56,6 +58,8 @@ modules_to_test = (
     lighthouse.haproxy.stanzas.proxy,
     lighthouse.haproxy.stanzas.stats,
     lighthouse.log,
+    lighthouse.log.cli,
+    lighthouse.log.config,
     lighthouse.node,
     lighthouse.peer,
     lighthouse.pluggable,
