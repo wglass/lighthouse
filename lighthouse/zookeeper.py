@@ -257,15 +257,20 @@ class ZookeeperDiscovery(Discovery):
         path = self.path_of(service, node)
         data = node.serialize().encode()
 
-        try:
+        znode = self.client.exists(path)
+
+        if not znode:
+            logger.debug("ZNode at %s does not exist, creating new one.", path)
+            self.client.create(path, value=data, ephemeral=True, makepath=True)
+        elif znode.owner_session_id != self.client.client_id[0]:
+            logger.debug("ZNode at %s not owned by us, recreating.", path)
+            txn = self.client.transaction()
+            txn.delete(path)
+            txn.create(path, value=data, ephemeral=True)
+            txn.commit()
+        else:
             logger.debug("Setting node value to %r", data)
             self.client.set(path, data)
-        except exceptions.NoNodeError:
-            logger.debug("Target znode did not exist, creating new one.")
-            self.client.create(
-                path, value=data,
-                ephemeral=True, makepath=True
-            )
 
     def report_down(self, service, port):
         """
