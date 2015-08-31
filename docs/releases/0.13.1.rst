@@ -1,0 +1,5 @@
+0.13.1
+~~~~~~
+
+* Add optional ContextFilter so that the current program "WRITER" or "REPORTER"
+  is available on log records for formatting.
