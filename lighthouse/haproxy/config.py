@@ -83,7 +83,7 @@ class HAProxyConfig(object):
                 Section("Listener for stats web interface", self.stats_stanza)
             )
 
-        return "\n\n\n".join([str(section) for section in sections])
+        return "\n\n\n".join([str(section) for section in sections]) + "\n"
 
     def get_meta_clusters(self, clusters):
         """
