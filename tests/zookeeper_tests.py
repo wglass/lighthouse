@@ -226,6 +226,10 @@ class ZookeeperTests(unittest.TestCase):
         )
         zk.connect()
 
+        znode = Mock(owner_session_id="0x1234")
+        zk.client.exists.return_value = znode
+        zk.client.client_id = (znode.owner_session_id, "asf")
+
         service = Mock(metadata={"type": "master"})
         service.name = "webcache"
 
@@ -269,7 +273,7 @@ class ZookeeperTests(unittest.TestCase):
         )
         zk.connect()
 
-        zk.client.set.side_effect = exceptions.NoNodeError
+        zk.client.exists.return_value = None
 
         service = Mock(metadata={})
         service.name = "webcache"
@@ -305,6 +309,63 @@ class ZookeeperTests(unittest.TestCase):
                 }
             }
         )
+
+    @patch("lighthouse.peer.socket")
+    @patch("lighthouse.node.socket")
+    def test_report_up__old_node(self, mock_socket, peer_socket, mock_client):
+        mock_socket.getfqdn.return_value = "redis1.int.local"
+        mock_socket.gethostbyname.return_value = "10.0.1.8"
+        peer_socket.getfqdn.return_value = "redis1.int.local"
+        peer_socket.gethostbyname.return_value = "10.0.1.8"
+
+        zk = ZookeeperDiscovery()
+        zk.apply_config(
+            {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
+        )
+        zk.connect()
+
+        znode = Mock(owner_session_id="0x1234")
+        zk.client.exists.return_value = znode
+        zk.client.client_id = ("0xasdf", "asf")
+
+        service = Mock(metadata={})
+        service.name = "webcache"
+
+        zk.report_up(service, 6379)
+
+        txn = zk.client.transaction.return_value
+
+        txn.delete.assert_called_once_with(
+            "/lighthouse/webcache/redis1.int.local:6379"
+        )
+        create_args, create_kwargs = txn.create.call_args
+        self.assertEqual(
+            create_args,
+            ("/lighthouse/webcache/redis1.int.local:6379",)
+        )
+        self.assertEqual(len(create_kwargs), 2)
+        self.assertEqual(create_kwargs["ephemeral"], True)
+
+        value = json.loads(create_kwargs["value"].decode())
+        value["peer"] = json.loads(value["peer"])
+        value["metadata"] = json.loads(value["metadata"])
+
+        self.assertEqual(
+            value,
+            {
+                "host": "redis1.int.local",
+                "ip": "10.0.1.8",
+                "port": 6379,
+                "metadata": {},
+                "peer": {
+                    "port": 1024,
+                    "name": "redis1.int.local",
+                    "ip": "10.0.1.8",
+                }
+            }
+        )
+
+        txn.commit.assert_called_once_with()
 
     def test_report_down_not_connected(self, mock_client):
         zk = ZookeeperDiscovery()
