@@ -3,6 +3,7 @@ import logging
 
 from lighthouse import log, writer
 
+
 parser = argparse.ArgumentParser(
     description="Lighthouse HAProxy config writer."
 )
@@ -24,7 +25,7 @@ parser.add_argument(
 def run():
     args = parser.parse_args()
 
-    logger = log.setup(args.log_config)
+    logger = log.setup("WRITER", args.log_config)
 
     if args.debug:
         logger.setLevel(logging.DEBUG)

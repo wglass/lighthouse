@@ -25,7 +25,7 @@ parser.add_argument(
 def run():
     args = parser.parse_args()
 
-    logger = log.setup(args.log_config)
+    logger = log.setup("REPORTER", args.log_config)
 
     if args.debug:
         logger.setLevel(logging.DEBUG)

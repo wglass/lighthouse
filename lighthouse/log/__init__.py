@@ -1,10 +1,11 @@
 import logging
 
 from .cli import CLIHandler
+from .context import ContextFilter
 from .config import load_yaml, load_json, load_ini
 
 
-def setup(config_file=None):
+def setup(program, config_file=None):
     """
     Simple function that attaches the CLIHandler to the root logger.
     """
@@ -19,5 +20,7 @@ def setup(config_file=None):
         load_json(config_file)
     else:
         load_ini(config_file)
+
+    ContextFilter.program = program
 
     return logging.getLogger()
