@@ -1,7 +1,13 @@
 import logging
 import threading
 
+from concurrent import futures
+
 from .monitor import ConfigFileMonitor
+from lighthouse.events import wait_on_event
+
+
+MAX_WORKERS = 8
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +42,9 @@ class ConfigWatcher(object):
         for config_class in self.watched_configurables:
             self.configurables[config_class] = {}
 
+        self.work_pool = futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
+        self.thread_pool = {}
+
         self.shutdown = threading.Event()
 
     def start(self):
@@ -54,15 +63,7 @@ class ConfigWatcher(object):
                 )
             )
 
-        self.run()
-
-    def run(self):
-        """
-        This method is called once the config file monitors are started.
-
-        Subclasses are expected to implement this.
-        """
-        raise NotImplementedError
+        wait_on_event(self.shutdown)
 
     def wind_down(self):
         """
@@ -73,21 +74,48 @@ class ConfigWatcher(object):
         """
         raise NotImplementedError
 
+    def launch_thread(self, name, fn, *args, **kwargs):
+        """
+        Adds a named thread to the "thread pool" dictionary of Thread objects.
+
+        A daemon thread that executes the passed-in function `fn` with the
+        given args and keyword args is started and tracked in the `thread_pool`
+        attribute with the given `name` as the key.
+        """
+        logger.debug(
+            "Launching thread '%s': %s(%s, %s)", name,
+            fn, args, kwargs
+        )
+        self.thread_pool[name] = threading.Thread(
+            target=fn, args=args, kwargs=kwargs
+        )
+        self.thread_pool[name].daemon = True
+        self.thread_pool[name].start()
+
+    def kill_thread(self, name):
+        """
+        Joins the thread in the `thread_pool` dict with the given `name` key.
+        """
+        if name not in self.thread_pool:
+            return
+
+        self.thread_pool[name].join()
+        del self.thread_pool[name]
+
     def add_configurable(self, configurable_class, name, configurable):
         """
         Callback fired when a configurable instance is added.
 
         Adds the configurable to the proper "registry" and calls a method
-        named "on_<configurable classname>_add" if it is defined.
+        named "on_<configurable classname>_add" in the work pool if the hook
+        is defined.
 
         If the added configurable is already present, `update_configurable()`
         is called instead.
         """
         configurable_class_name = configurable_class.__name__.lower()
 
-        logger.info(
-            "Adding %s: '%s'", configurable_class_name, name
-        )
+        logger.info("Adding %s: '%s'", configurable_class_name, name)
 
         registry = self.registry_for(configurable_class)
 
@@ -100,8 +128,16 @@ class ConfigWatcher(object):
         registry[name] = configurable
 
         hook = self.hook_for(configurable_class, action="add")
-        if hook:
-            hook(configurable)
+        if not hook:
+            return
+
+        def done(f):
+            try:
+                f.result()
+            except Exception:
+                logger.exception("Error adding configurable '%s'", name)
+
+        self.work_pool.submit(hook, configurable).add_done_callback(done)
 
     def update_configurable(self, configurable_class, name, config):
         """
@@ -111,8 +147,8 @@ class ConfigWatcher(object):
         `apply_config()` is called on it.
 
         If a method named "on_<configurable classname>_update" is defined it
-        is called and passed the configurable's name, the old config and the
-        new config.
+        is called in the work pool and passed the configurable's name, the old
+        config and the new config.
 
         If the updated configurable is not present, `add_configurable()` is
         called instead.
@@ -139,8 +175,16 @@ class ConfigWatcher(object):
         registry[name].apply_config(config)
 
         hook = self.hook_for(configurable_class, "update")
-        if hook:
-            hook(name, config)
+        if not hook:
+            return
+
+        def done(f):
+            try:
+                f.result()
+            except Exception:
+                logger.exception("Error updating configurable '%s'", name)
+
+        self.work_pool.submit(hook, name, config).add_done_callback(done)
 
     def remove_configurable(self, configurable_class, name):
         """
@@ -150,7 +194,8 @@ class ConfigWatcher(object):
         removes it.
 
         If a method named "on_<configurable classname>_remove" is defined it
-        is called and passed the configurable's name.
+        is called via the work pooland passed the configurable's name.
+
         If the removed configurable is not present, a warning is given and no
         further action is taken.
         """
@@ -168,10 +213,18 @@ class ConfigWatcher(object):
             return
 
         hook = self.hook_for(configurable_class, action="remove")
-        if hook:
-            hook(name)
+        if not hook:
+            registry.pop(name)
+            return
 
-        registry.pop(name)
+        def done(f):
+            try:
+                f.result()
+                registry.pop(name)
+            except Exception:
+                logger.exception("Error removing configurable '%s'", name)
+
+        self.work_pool.submit(hook, name).add_done_callback(done)
 
     def registry_for(self, configurable_class):
         """
@@ -204,12 +257,17 @@ class ConfigWatcher(object):
         All config file observers are stopped and their threads joined, along
         with the worker thread pool.
         """
+        self.shutdown.set()
+
         for monitor in self.observers:
             monitor.stop()
-
-        self.shutdown.set()
 
         self.wind_down()
 
         for monitor in self.observers:
             monitor.join()
+
+        for thread in self.thread_pool.values():
+            thread.join()
+
+        self.work_pool.shutdown()

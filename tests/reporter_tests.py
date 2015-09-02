@@ -4,6 +4,7 @@ except ImportError:
     import unittest
 
 from mock import Mock, patch
+from concurrent import futures
 
 from lighthouse.service import Service
 from lighthouse.discovery import Discovery
@@ -15,39 +16,26 @@ class ReporterTests(unittest.TestCase):
     def setUp(self):
         super(ReporterTests, self).setUp()
 
-        futures_patcher = patch("lighthouse.reporter.futures")
+        futures_patcher = patch("lighthouse.configs.watcher.futures")
         mock_futures = futures_patcher.start()
-
-        executor = mock_futures.ThreadPoolExecutor.return_value
-
-        state = {}
-
-        def fire_immediately(cb):
-            cb(state["future"])
-
-        def create_future(fn, *args, **kwargs):
-            f = Mock()
-            f.add_done_callback.side_effect = fire_immediately
-            f.result.return_value = fn(*args, **kwargs)
-
-            state["future"] = f
-
-            return state["future"]
-
-        executor.submit.side_effect = create_future
 
         self.addCleanup(futures_patcher.stop)
 
-    @patch("lighthouse.reporter.wait_on_event")
-    def test_run_waits_on_shutdown(self, wait_on_event):
-        reporter = Reporter("/etc/configs")
+        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
 
-        reporter.run()
+        def run_immediately(fn, *args, **kwargs):
+            f = futures.Future()
 
-        wait_on_event.assert_called_once_with(reporter.shutdown)
+            try:
+                f.set_result(fn(*args, **kwargs))
+            except Exception as e:
+                f.set_exception(e)
 
-    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
-    def test_wind_down_calls_stop_on_discoveries(self, Executor):
+            return f
+
+        self.mock_work_pool.submit.side_effect = run_immediately
+
+    def test_wind_down_calls_stop_on_discoveries(self):
         reporter = Reporter("/etc/configs")
 
         discovery1 = Mock()
@@ -62,16 +50,6 @@ class ReporterTests(unittest.TestCase):
 
         discovery1.stop.assert_called_once_with()
         discovery2.stop.assert_called_once_with()
-
-    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
-    def test_wind_down_closes_pool(self, Executor):
-        reporter = Reporter("/etc/configs")
-
-        self.assertEqual(reporter.pool, Executor.return_value)
-
-        reporter.wind_down()
-
-        Executor.return_value.shutdown.assert_called_once_with()
 
     def test_add_discovery_calls_connect(self):
         discovery = Mock()
@@ -100,11 +78,9 @@ class ReporterTests(unittest.TestCase):
             "a_service": service
         }
 
-        service.is_up = True
-
         reporter.update_configurable(Discovery, "disco", {})
 
-        self.assertEqual(service.is_up, None)
+        service.reset_status.assert_called_once_with()
 
     def test_remove_discovery_calls_stop(self):
         discovery = Mock()
@@ -121,9 +97,8 @@ class ReporterTests(unittest.TestCase):
 
         discovery.stop.assert_called_once_with()
 
-    @patch("lighthouse.reporter.futures.ThreadPoolExecutor")
-    @patch("lighthouse.reporter.threading.Thread")
-    def test_add_service_starts_check_run_thread(self, Thread, Executor):
+    @patch.object(Reporter, "launch_thread")
+    def test_add_service_starts_check_run_thread(self, launch_thread):
         service = Mock()
         service.name = "existing"
 
@@ -131,13 +106,9 @@ class ReporterTests(unittest.TestCase):
 
         reporter.add_configurable(Service, "existing", service)
 
-        self.assertEqual(
-            reporter.check_threads["existing"], Thread.return_value
+        launch_thread.assert_called_once_with(
+            "existing", reporter.check_loop, service
         )
-        Thread.assert_called_once_with(
-            target=reporter.check_loop, args=(service,)
-        )
-        Thread.return_value.start.assert_called_once_with()
 
     def test_check_loop_passes_if_shutdown_set(self):
         service = Mock()

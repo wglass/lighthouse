@@ -1,11 +1,9 @@
 import logging
-import threading
 
 from .configs.watcher import ConfigWatcher
 from .balancer import Balancer
 from .cluster import Cluster
 from .discovery import Discovery
-from .events import wait_on_any, wait_on_event
 
 
 logger = logging.getLogger(__name__)
@@ -26,66 +24,34 @@ class Writer(ConfigWatcher):
 
     watched_configurables = (Balancer, Discovery, Cluster)
 
-    def __init__(self, *args, **kwargs):
-        super(Writer, self).__init__(*args, **kwargs)
-
-        self.nodes_updated = threading.Event()
-
-    def run(self):
+    def sync_balancer_files(self):
         """
-        Runs the main thread of the writer ConfigWatcher.
+        Syncs the config files for each present Balancer instance.
 
-        This merely launches a separate thread for the config-file-updating
-        loop and waits on thwe `shutdown` event.
+        Submits the work to sync each file as a work pool job.
         """
-        logger.info("Running writer.")
 
-        update_thread = threading.Thread(
-            name="updates", target=self.wait_for_updates
-        )
-        update_thread.daemon = True
-        update_thread.start()
-
-        wait_on_event(self.shutdown)
-
-    def wait_for_updates(self):
-        """
-        Writer update loop.
-
-        The loop waits on either the `shutdown` or `nodes_updated` events
-        to fire.  if the `shutdown` event is fired the loop is broken and we
-        stop updating.If the `nodes_updated` event is set then all of the
-        configured load balancers sync their config files.
-        """
-        while True:
-            wait_on_any(self.shutdown, self.nodes_updated)
-
-            if self.shutdown.is_set():
-                break
-
-            logger.debug("Update flag set.")
+        def sync():
             for balancer in self.configurables[Balancer].values():
                 balancer.sync_file(self.configurables[Cluster].values())
-            self.nodes_updated.clear()
+
+        self.work_pool.submit(sync)
 
     def on_balancer_add(self, balancer):
         """
-        Once a balancer is added we set the `nodes_updated` event so that we
-        sync the config file right away.
+        Whenever a balancer is added we sync all of the balancer config files.
         """
-        balancer.sync_file(self.configurables[Cluster].values())
-        self.nodes_updated.set()
+        self.sync_balancer_files()
 
     def on_balancer_update(self, name, new_config):
         """
-        Sets the `nodes_updated` event so that we sync balancer config files
-        whenever a balancer is updated.
+        Whenever a balancer is updated we sync all of the balancer conf files.
         """
-        self.nodes_updated.set()
+        self.sync_balancer_files()
 
     def on_balancer_remove(self, name):
         """
-        The removal of a load balancer config is unusual but still supported.
+        The removal of a load balancer config isn't supported just yet.
 
         If the balancer being removed is the only configured one we fire
         a critical log message saying so.  A writer setup with no balancers
@@ -93,25 +59,28 @@ class Writer(ConfigWatcher):
         """
         if len(self.configurables[Balancer]) == 1:
             logger.critical(
-                "'%s' config file removed! no more balancers left!", name
+                "'%s' config file removed! It was the only balancer left!",
+                name
             )
 
     def on_discovery_add(self, discovery):
         """
-        When a discovery is added we call `connect()` on it and have it start
-        watching for changes to any existing clusters that use the new
-        discovery method.
+        When a discovery is added we call `connect()` on it and launch a thread
+        for each cluster where the discovery watches for changes to the
+        cluster's nodes.
         """
         discovery.connect()
-        discovery.nodes_updated = self.nodes_updated
 
         for cluster in self.configurables[Cluster].values():
             if cluster.discovery != discovery.name:
                 continue
 
-            discovery.start_watching(cluster)
+            self.launch_thread(
+                cluster.name, discovery.start_watching,
+                cluster, self.sync_balancer_files
+            )
 
-        self.nodes_updated.set()
+        self.sync_balancer_files()
 
     def on_discovery_remove(self, name):
         """
@@ -120,7 +89,7 @@ class Writer(ConfigWatcher):
         """
         self.configurables[Discovery][name].stop()
 
-        self.nodes_updated.set()
+        self.sync_balancer_files()
 
     def on_cluster_add(self, cluster):
         """
@@ -131,11 +100,12 @@ class Writer(ConfigWatcher):
         if cluster.discovery not in self.configurables[Discovery]:
             return
 
-        self.configurables[Discovery][cluster.discovery].start_watching(
-            cluster
-        )
+        discovery = self.configurables[Discovery][cluster.discovery]
 
-        self.nodes_updated.set()
+        self.launch_thread(
+            cluster.name, discovery.start_watching,
+            cluster, self.sync_balancer_files
+        )
 
     def on_cluster_update(self, name, new_config):
         """
@@ -148,15 +118,14 @@ class Writer(ConfigWatcher):
         for the cluster's changes (if the new method is actually around).
 
         Regardless of how the discovery method shuffling plays out the
-        `nodes_updated` flag is set so that we properly sync any balancer
-        configurations.
+        `sync_balancer_files` method is called.
         """
         cluster = self.configurables[Cluster][name]
 
         old_discovery = cluster.discovery
         new_discovery = new_config["discovery"]
         if old_discovery == new_discovery:
-            self.nodes_updated.set()
+            self.sync_balancer_files()
             return
 
         logger.info(
@@ -168,17 +137,20 @@ class Writer(ConfigWatcher):
             self.configurables[Discovery][old_discovery].stop_watching(
                 cluster
             )
+            self.kill_thread(cluster.name)
         if new_discovery not in self.configurables[Discovery]:
             logger.warn(
                 "New discovery '%s' for cluster '%s' is unknown/unavailable.",
                 new_discovery, name
             )
-            self.nodes_updated.set()
+            self.sync_balancer_files()
             return
 
-        self.configurables[Discovery][new_discovery].start_watching(cluster)
-
-        self.nodes_updated.set()
+        discovery = self.configurables[Discovery][new_discovery]
+        self.launch_thread(
+            cluster.name,
+            discovery.start_watching, cluster, self.sync_balancer_files
+        )
 
     def on_cluster_remove(self, name):
         """
@@ -190,8 +162,9 @@ class Writer(ConfigWatcher):
             self.configurables[Discovery][discovery_name].stop_watching(
                 self.configurables[Cluster][name]
             )
+            self.kill_thread(name)
 
-        self.nodes_updated.set()
+        self.sync_balancer_files()
 
     def wind_down(self):
         """

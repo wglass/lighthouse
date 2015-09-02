@@ -5,10 +5,9 @@ from kazoo import client, exceptions
 
 from lighthouse.discovery import Discovery
 from lighthouse.node import Node
-from lighthouse.events import wait_on_event
+from lighthouse.events import wait_on_any
 
 
-DEFAULT_CONNECT_TIMEOUT = 30  # seconds
 NO_NODE_INTERVAL = 2  # seconds
 
 
@@ -41,11 +40,9 @@ class ZookeeperDiscovery(Discovery):
         self.base_path = None
 
         self.client = None
-        self.connected = False
+        self.connected = threading.Event()
 
-        self.nodes_updated = None
         self.stop_events = {}
-        self.watched_clusters = set()
 
     @classmethod
     def validate_dependencies(cls):
@@ -68,7 +65,7 @@ class ZookeeperDiscovery(Discovery):
     def apply_config(self, config):
         """
         Takes the given config dictionary and sets the hosts and base_path
-        and connection_timeout (optional in the config) attributes.
+        attributes.
 
         If the kazoo client connection is established, its hosts list is
         updated to the newly configured value.
@@ -76,20 +73,18 @@ class ZookeeperDiscovery(Discovery):
         self.hosts = config["hosts"]
         old_base_path = self.base_path
         self.base_path = config["path"]
-        self.connect_timeout = config.get(
-            "connect_timeout", DEFAULT_CONNECT_TIMEOUT
-        )
-        if not self.connected:
+        if not self.connected.is_set():
             return
 
+        logger.debug("Setting ZK hosts to %s", self.hosts)
         self.client.set_hosts(",".join(self.hosts))
 
         if old_base_path and old_base_path != self.base_path:
-            clusters = self.watched_clusters.copy()
-            for cluster in clusters:
-                self.stop_watching(cluster, base_path=old_base_path)
-                self.start_watching(cluster)
-            clusters.clear()
+            logger.critical(
+                "ZNode base path changed!"
+                + " Lighthouse will need to be restarted"
+                + " to watch the right znodes"
+            )
 
     def connect(self):
         """
@@ -98,17 +93,14 @@ class ZookeeperDiscovery(Discovery):
         Passes the client the `handle_connection_change` method as a callback
         to fire when the Zookeeper connection changes state.
         """
-        self.client = client.KazooClient(
-            hosts=",".join(self.hosts),
-        )
-        self.client.start(timeout=self.connect_timeout)
-        self.connected = True
+        self.client = client.KazooClient(hosts=",".join(self.hosts))
+
         self.client.add_listener(self.handle_connection_change)
+        self.client.start_async()
 
     def disconnect(self):
         """
-        Removes any references to ChildWatch instances and stops and closes
-        the kazoo connection.
+        Stops and closes the kazoo connection.
         """
         logger.info("Disconnecting from Zookeeper.")
         self.client.stop()
@@ -118,96 +110,72 @@ class ZookeeperDiscovery(Discovery):
         """
         Callback for handling changes in the kazoo client's connection state.
 
-        If the connection becomes lost or suspended, the `connected` attribute
-        is set to False.  Other given states imply that the connection is
-        established so `connected` is set to True.
+        If the connection becomes lost or suspended, the `connected` Event
+        is cleared.  Other given states imply that the connection is
+        established so `connected` is set.
         """
         if state == client.KazooState.LOST:
             if not self.shutdown.is_set():
-                logger.warn("Zookeeper session lost!")
-            self.connected = False
+                logger.info("Zookeeper session lost!")
+            self.connected.clear()
         elif state == client.KazooState.SUSPENDED:
-            logger.warn("Zookeeper connection suspended!")
-            self.connected = False
+            logger.info("Zookeeper connection suspended!")
+            self.connected.clear()
         else:
             logger.info("Zookeeper connection (re)established.")
-            self.connected = True
+            self.connected.set()
 
-    def start_watching(self, cluster):
-        """
-        Launches a greenlet to asynchronously watch a cluster's associated
-        znode.
-
-        Also adds the cluster to the `watched_clusters` set so that any calls
-        to `apply_config` re-watch the cluster appropriately.
-        """
-        self.watched_clusters.add(cluster)
-        watcher_thread = threading.Thread(
-            name="zookeeper",
-            target=self.launch_child_watcher, args=(cluster,)
-        )
-        watcher_thread.daemon = True
-        watcher_thread.start()
-
-    def launch_child_watcher(self, cluster):
+    def start_watching(self, cluster, callback):
         """
         Initiates the "watching" of a cluster's associated znode.
 
         This is done via kazoo's ChildrenWatch object.  When a cluster's
         znode's child nodes are updated, a callback is fired and we update
         the cluster's `nodes` attribute based on the existing child znodes
-        and set the `nodes_updated` Event.
+        and fire a passed-in callback with no arguments once done.
 
         If the cluster's znode does not exist we wait for `NO_NODE_INTERVAL`
         seconds before trying again as long as no ChildrenWatch exists for
         the given cluster yet and we are not in the process of shutting down.
         """
-        cluster_node_path = "/".join([self.base_path, cluster.name])
+        logger.debug("starting to watch cluster %s", cluster.name)
+        wait_on_any(self.connected, self.shutdown)
+        logger.debug("done waiting on (connected, shutdown)")
+        znode_path = "/".join([self.base_path, cluster.name])
 
-        self.stop_events[cluster_node_path] = threading.Event()
+        self.stop_events[znode_path] = threading.Event()
 
         def should_stop():
             return (
-                cluster_node_path not in self.stop_events
-                or self.stop_events[cluster_node_path].is_set()
+                znode_path not in self.stop_events
+                or self.stop_events[znode_path].is_set()
+                or self.shutdown.is_set()
             )
-
-        def wait_for_stop(timeout=None):
-            if cluster_node_path in self.stop_events:
-                wait_on_event(self.stop_events[cluster_node_path], timeout)
-
-        callback = self.make_znode_callback(cluster_node_path, cluster)
 
         while not should_stop():
             try:
-                self.client.ChildrenWatch(cluster_node_path, callback)
-                wait_for_stop()
-            except exceptions.NoNodeError:
-                wait_for_stop(timeout=NO_NODE_INTERVAL)
+                if self.client.exists(znode_path):
+                    break
+            except exceptions.ConnectionClosedError:
+                break
 
-    def make_znode_callback(self, path, cluster):
-        """
-        Helper method for generating a callback to be used in kazoo's
-        ChildrenWatch feature.
+            wait_on_any(
+                self.stop_events[znode_path], self.shutdown,
+                timeout=NO_NODE_INTERVAL
+            )
 
-        Given a znode path and a Cluster instance, the returned function
-        takes a list of child znode names and iterates over each one,
-        deserializing the child znode's data and updating the Cluster
-        instances `nodes` attribute with the valid nodes.
-        """
+        logger.debug("setting up ChildrenWatch for %s", znode_path)
 
-        def on_znode_change(children):
-            if (
-                    path not in self.stop_events
-                    or self.stop_events[path].is_set()
-            ):
+        @self.client.ChildrenWatch(znode_path)
+        def watch(children):
+            if should_stop():
                 return False
 
-            logger.debug("znode children changed! (%s)", path)
+            logger.debug("znode children changed! (%s)", znode_path)
 
             new_nodes = []
             for child in children:
-                child_path = "/".join([path, child])
+                child_path = "/".join([znode_path, child])
                 try:
                     new_nodes.append(
                         Node.deserialize(self.client.get(child_path)[0])
@@ -217,27 +185,17 @@ class ZookeeperDiscovery(Discovery):
                     continue
 
             cluster.nodes = new_nodes
-            self.nodes_updated.set()
 
-        return on_znode_change
+            callback()
 
-    def stop_watching(self, cluster, base_path=None):
+    def stop_watching(self, cluster):
         """
         Causes the thread that launched the watch of the cluster path
         to end by setting the proper stop event found in `self.stop_events`.
-
-        Also discards the cluster from the `watched_clusters` set so that
-        any new calls to `apply_config` don't inadvertently start watching
-        the cluster again.
         """
-        if not base_path:
-            base_path = self.base_path
-
-        cluster_node_path = "/".join([base_path, cluster.name])
-        if cluster_node_path in self.stop_events:
-            self.stop_events[cluster_node_path].set()
-
-        self.watched_clusters.discard(cluster)
+        znode_path = "/".join([self.base_path, cluster.name])
+        if znode_path in self.stop_events:
+            self.stop_events[znode_path].set()
 
     def report_up(self, service, port):
         """
@@ -245,12 +203,9 @@ class ZookeeperDiscovery(Discovery):
         its respective znode in Zookeeper and setting the znode's data to
         the serialized representation of the node.
 
-        If for whatever reason we are not currently connect to Zookeeper a
-        warning is given and no further action is taken.
+        Waits for zookeeper to be connected before taking any action.
         """
-        if not self.connected:
-            logger.warn("Not connected to zookeeper, cannot save znode.")
-            return
+        wait_on_any(self.connected, self.shutdown)
 
         node = Node.current(service, port)
 
@@ -277,12 +232,10 @@ class ZookeeperDiscovery(Discovery):
         Reports the given service's present node as down by deleting the
         node's znode in Zookeeper if the znode is present.
 
-        If for whatever reason we are not currently connect to Zookeeper a
-        warning is given and no further action is taken.
+        Waits for the Zookeeper connection to be established before further
+        action is taken.
         """
-        if not self.connected:
-            logger.warn("Not connected to zookeeper, cannot delete znode.")
-            return
+        wait_on_any(self.connected, self.shutdown)
 
         node = Node.current(service, port)
 
