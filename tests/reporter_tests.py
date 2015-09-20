@@ -1,5 +1,4 @@
 from mock import Mock, patch
-from concurrent import futures
 
 from tests import cases
 
@@ -9,28 +8,6 @@ from lighthouse.reporter import Reporter
 
 
 class ReporterTests(cases.WatcherTestCase):
-
-    def setUp(self):
-        super(ReporterTests, self).setUp()
-
-        futures_patcher = patch("lighthouse.configs.watcher.futures")
-        mock_futures = futures_patcher.start()
-
-        self.addCleanup(futures_patcher.stop)
-
-        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
-
-        def run_immediately(fn, *args, **kwargs):
-            f = futures.Future()
-
-            try:
-                f.set_result(fn(*args, **kwargs))
-            except Exception as e:
-                f.set_exception(e)
-
-            return f
-
-        self.mock_work_pool.submit.side_effect = run_immediately
 
     def test_wind_down_calls_stop_on_discoveries(self):
         reporter = Reporter("/etc/configs")
