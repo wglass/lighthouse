@@ -1,5 +1,4 @@
 from mock import patch, call, Mock
-from concurrent import futures
 
 from tests import cases
 
@@ -28,28 +27,6 @@ class TestWatcher(ConfigWatcher):
 
 
 class ConfigWatcherTests(cases.WatcherTestCase):
-
-    def setUp(self):
-        super(ConfigWatcherTests, self).setUp()
-
-        futures_patcher = patch("lighthouse.configs.watcher.futures")
-        mock_futures = futures_patcher.start()
-
-        self.addCleanup(futures_patcher.stop)
-
-        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
-
-        def run_immediately(fn, *args, **kwargs):
-            f = futures.Future()
-
-            try:
-                f.set_result(fn(*args, **kwargs))
-            except Exception as e:
-                f.set_exception(e)
-
-            return f
-
-        self.mock_work_pool.submit.side_effect = run_immediately
 
     def test_shutdown_event_unset_by_default(self):
         watcher = ConfigWatcher("/etc/configs/")
