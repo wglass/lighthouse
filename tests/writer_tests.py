@@ -4,6 +4,7 @@ except ImportError:
     import unittest
 
 from mock import Mock, call, patch
+from concurrent import futures
 
 from lighthouse.balancer import Balancer
 from lighthouse.cluster import Cluster
@@ -13,76 +14,91 @@ from lighthouse.writer import Writer
 
 class WriterTests(unittest.TestCase):
 
-    @patch("lighthouse.writer.wait_on_event")
-    def test_run_waits_on_shutdown(self, wait_on_event):
+    def setUp(self):
+        super(WriterTests, self).setUp()
+
+        futures_patcher = patch("lighthouse.configs.watcher.futures")
+        mock_futures = futures_patcher.start()
+
+        self.addCleanup(futures_patcher.stop)
+
+        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
+
+        def run_immediately(fn, *args, **kwargs):
+            f = futures.Future()
+
+            try:
+                f.set_result(fn(*args, **kwargs))
+            except Exception as e:
+                f.set_exception(e)
+
+            return f
+
+        self.mock_work_pool.submit.side_effect = run_immediately
+
+    def test_sync_balancer_files(self):
         writer = Writer("/etc/configs")
-        writer.nodes_updated = Mock()
-        writer.shutdown = Mock()
 
-        writer.run()
-
-        wait_on_event.assert_called_once_with(writer.shutdown)
-
-    @patch("lighthouse.writer.wait_on_any")
-    def test_update_loop_syncs_file_if_nodes_updated_set(self, wait_on_any):
-        writer = Writer("/etc/configs")
-
-        writer.nodes_updated = Mock()
-        writer.shutdown = Mock()
-
-        state = {"loops": 0, "shutdown_event_set": False}
-
-        def mock_is_set():
-            return state["shutdown_event_set"]
-
-        def mock_wait(*events):
-            state["loops"] += 1
-            if state["loops"] > 1:
-                state["shutdown_event_set"] = True
-
-        writer.shutdown.is_set.side_effect = mock_is_set
-        wait_on_any.side_effect = mock_wait
-
-        writer.nodes_updated.is_set.return_value = True
-
-        balancer = Mock()
-        balancer.name = "balancer"
-
+        balancer1 = Mock()
+        balancer2 = Mock()
         cluster1 = Mock()
         cluster2 = Mock()
-        writer.add_configurable(Cluster, "cache", cluster1)
-        writer.add_configurable(Cluster, "app", cluster2)
-
-        writer.add_configurable(Balancer, "balancer", balancer)
-
-        writer.wait_for_updates()
-
-        args, kwargs = writer.configurables[Balancer][
-            "balancer"
-        ].sync_file.call_args
-        self.assertEqual(set(args[0]), set([cluster1, cluster2]))
-
-        writer.nodes_updated.clear.assert_called_once_with()
-
-    def test_add_balancer_sets_nodes_updated_flag(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-
-        writer.add_configurable(Balancer, "balancer", Mock())
-
-        writer.nodes_updated.set.assert_called_once_with()
-
-    def test_update_balancer_sets_nodes_updated_flag(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-
         writer.configurables[Balancer] = {
-            "balance": Mock()
+            "balancer1": balancer1,
+            "balancer2": balancer2
+        }
+        writer.configurables[Cluster] = {
+            "cluster1": cluster1,
+            "cluster2": cluster2
         }
 
-        writer.update_configurable(Balancer, "balance", {})
+        writer.sync_balancer_files()
 
-        writer.nodes_updated.set.assert_called_once_with()
+        sync_args, _ = balancer1.sync_file.call_args
+        self.assertEqual(
+            set(sync_args[0]), set([cluster1, cluster2])
+        )
+        sync_args, _ = balancer2.sync_file.call_args
+        self.assertEqual(
+            set(sync_args[0]), set([cluster1, cluster2])
+        )
+
+    def test_add_balancer_syncs_all_files(self):
+        app_cluster = Mock()
+        nginx_balancer = Mock()
+        haproxy_balancer = Mock()
+
+        writer = Writer("/etc/lighthouse")
+        writer.configurables[Cluster] = {"app": app_cluster}
+        writer.configurables[Balancer] = {"nginx": nginx_balancer}
+
+        writer.add_configurable(Balancer, "haproxy", haproxy_balancer)
+
+        args, _ = nginx_balancer.sync_file.call_args
+        self.assertEqual(list(args[0]), [app_cluster])
+
+        args, _ = haproxy_balancer.sync_file.call_args
+        self.assertEqual(list(args[0]), [app_cluster])
+
+    def test_update_balancer_syncs_all_files(self):
+        app_cluster = Mock()
+        nginx_balancer = Mock()
+        haproxy_balancer = Mock()
+
+        writer = Writer("/etc/lighthouse")
+        writer.configurables[Cluster] = {"app": app_cluster}
+        writer.configurables[Balancer] = {
+            "nginx": nginx_balancer,
+            "haproxy": haproxy_balancer
+        }
+
+        writer.update_configurable(Balancer, "nginx", {})
+
+        args, _ = nginx_balancer.sync_file.call_args
+        self.assertEqual(list(args[0]), [app_cluster])
+
+        args, _ = haproxy_balancer.sync_file.call_args
+        self.assertEqual(list(args[0]), [app_cluster])
 
     @patch("lighthouse.writer.logger")
     def test_remove_balancer_logs_critical_if_none_left(self, mock_logger):
@@ -100,7 +116,6 @@ class WriterTests(unittest.TestCase):
     def test_add_discovery_calls_connect_and_sets_nodes_updated(self):
         discovery = Mock()
         discovery.name = "existing"
-        discovery.nodes_updated = None
 
         writer = Writer("/etc/configs")
 
@@ -109,14 +124,6 @@ class WriterTests(unittest.TestCase):
         writer.add_configurable(Discovery, "existing", discovery)
 
         discovery.connect.assert_called_once_with()
-        self.assertEqual(discovery.nodes_updated, writer.nodes_updated)
-
-        self.assertEqual(
-            writer.configurables[Discovery],
-            {
-                "existing": discovery
-            }
-        )
 
     def test_add_discovery_watches_each_cluster(self):
         discovery = Mock()
@@ -139,8 +146,8 @@ class WriterTests(unittest.TestCase):
         writer.add_configurable(Cluster, "web", cluster3)
 
         discovery.start_watching.assert_has_calls([
-            call(cluster2),
-            call(cluster3),
+            call(cluster2, writer.sync_balancer_files),
+            call(cluster3, writer.sync_balancer_files),
         ])
 
     def test_update_cluster_switches_discoveries(self):
@@ -164,7 +171,9 @@ class WriterTests(unittest.TestCase):
         writer.update_configurable(Cluster, cluster.name, {"discovery": "dns"})
 
         riak_discovery.stop_watching.assert_called_once_with(cluster)
-        dns_discovery.start_watching.assert_called_once_with(cluster)
+        dns_discovery.start_watching.assert_called_once_with(
+            cluster, writer.sync_balancer_files
+        )
 
     def test_update_cluster_to_unknown_discovery(self):
         riak_discovery = Mock()
@@ -189,7 +198,6 @@ class WriterTests(unittest.TestCase):
         )
 
         riak_discovery.stop_watching.assert_called_once_with(cluster)
-        self.assertEqual(writer.nodes_updated.is_set(), True)
         self.assertEqual(dns_discovery.start_watching.called, False)
 
     def test_update_cluster_with_same_discovery(self):
@@ -214,7 +222,6 @@ class WriterTests(unittest.TestCase):
             Cluster, cluster.name, {"discovery": "riak"}
         )
 
-        self.assertEqual(writer.nodes_updated.is_set(), True)
         self.assertEqual(riak_discovery.stop_watching.called, False)
         self.assertEqual(dns_discovery.start_watching.called, False)
 
@@ -264,41 +271,3 @@ class WriterTests(unittest.TestCase):
         writer.remove_configurable(Discovery, "existing")
 
         discovery.stop.assert_called_once_with()
-
-    def test_add_cluster_triggers_node_update(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-        writer.configurables[Discovery]["zk"] = Mock()
-
-        writer.add_configurable(Cluster, "webapp", Mock(discovery="zk"))
-
-        writer.nodes_updated.set.assert_called_once_with()
-
-    def test_add_discovery_triggers_node_update(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-
-        writer.add_configurable(Discovery, "riak", Mock())
-
-        writer.nodes_updated.set.assert_called_once_with()
-
-    def test_remove_discovery_triggers_node_update(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-        writer.configurables[Discovery]["zk"] = Mock()
-
-        writer.remove_configurable(Discovery, "zk")
-
-        writer.nodes_updated.set.assert_called_once_with()
-
-    def test_remove_cluster_triggers_node_update(self):
-        writer = Writer("/etc/lighthouse")
-        writer.nodes_updated = Mock()
-        writer.configurables = {
-            Discovery: {"zk": Mock()},
-            Cluster: {"webapp": Mock(discovery="zk")}
-        }
-
-        writer.remove_configurable(Cluster, "webapp")
-
-        writer.nodes_updated.set.assert_called_once_with()

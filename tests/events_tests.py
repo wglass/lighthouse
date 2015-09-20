@@ -71,3 +71,27 @@ class EventsTests(unittest.TestCase):
         events.wait_on_event(mock_event)
 
         mock_event.wait.assert_called_once_with()
+
+    @patch.object(events, "wait_on_event")
+    def test_wait_on_any_with_timeout(self, wait_on_event):
+        event1 = Mock()
+        event1.is_set.return_value = False
+        event2 = Mock()
+        event2.is_set.return_value = False
+
+        events.wait_on_any(event1, event2, timeout=20)
+
+        _, wait_kwargs = wait_on_event.call_args
+
+        self.assertEqual(wait_kwargs["timeout"], 20)
+
+    @patch.object(events, "wait_on_event")
+    def test_wait_on_any_shortcircuits_if_already_set(self, wait_on_event):
+        event1 = Mock()
+        event1.is_set.return_value = True
+        event2 = Mock()
+        event2.is_set.return_value = False
+
+        events.wait_on_any(event1, event2, timeout=20)
+
+        assert wait_on_event.called is False

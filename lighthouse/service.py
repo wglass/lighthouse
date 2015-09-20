@@ -38,8 +38,8 @@ class Service(Configurable):
     @classmethod
     def validate_config(cls, config):
         """
-        Runs a check on the given config to make sure that `host`, `port`,
-        `checks`, `discovery` and an interval for the checks is defined.
+        Runs a check on the given config to make sure that `port`/`ports` and
+        `discovery` is defined.
         """
         if "discovery" not in config:
             raise ValueError("No discovery method defined.")
@@ -92,6 +92,15 @@ class Service(Configurable):
         self.check_interval = config["checks"]["interval"]
 
         self.update_checks(config["checks"])
+
+    def reset_status(self):
+        """
+        Sets the up/down status of the service ports to the default state.
+
+        Useful for when the configuration is updated and the checks involved
+        in determining the status might have changed.
+        """
+        self.is_up = collections.defaultdict(lambda: None)
 
     def update_ports(self):
         """

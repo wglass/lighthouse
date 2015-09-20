@@ -4,6 +4,7 @@ except ImportError:
     import unittest
 
 from mock import patch, call, Mock
+from concurrent import futures
 
 from lighthouse.configs.watcher import ConfigWatcher
 
@@ -23,11 +24,7 @@ class TestWatcher(ConfigWatcher):
     def __init__(self, *args, **kwargs):
         super(TestWatcher, self).__init__(*args, **kwargs)
 
-        self.run_called = False
         self.wind_down_called = False
-
-    def run(self):
-        self.run_called = True
 
     def wind_down(self):
         self.wind_down_called = True
@@ -35,18 +32,32 @@ class TestWatcher(ConfigWatcher):
 
 class ConfigWatcherTests(unittest.TestCase):
 
+    def setUp(self):
+        super(ConfigWatcherTests, self).setUp()
+
+        futures_patcher = patch("lighthouse.configs.watcher.futures")
+        mock_futures = futures_patcher.start()
+
+        self.addCleanup(futures_patcher.stop)
+
+        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
+
+        def run_immediately(fn, *args, **kwargs):
+            f = futures.Future()
+
+            try:
+                f.set_result(fn(*args, **kwargs))
+            except Exception as e:
+                f.set_exception(e)
+
+            return f
+
+        self.mock_work_pool.submit.side_effect = run_immediately
+
     def test_shutdown_event_unset_by_default(self):
         watcher = ConfigWatcher("/etc/configs/")
 
         self.assertEqual(watcher.shutdown.is_set(), False)
-
-    def test_run_must_be_defined(self):
-        watcher = ConfigWatcher("/etc/configs/")
-
-        self.assertRaises(
-            NotImplementedError,
-            watcher.run
-        )
 
     def test_wind_down_must_be_defined(self):
         watcher = ConfigWatcher("/etc/configs/")
@@ -217,9 +228,9 @@ class ConfigWatcherTests(unittest.TestCase):
     def test_start_creates_observers(self, Monitor):
         watcher = TestWatcher("/etc/configs")
 
-        watcher.start()
+        watcher.shutdown.set()
 
-        self.assertEqual(watcher.run_called, True)
+        watcher.start()
 
         self.assertEqual(
             watcher.observers,

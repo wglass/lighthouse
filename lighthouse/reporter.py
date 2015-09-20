@@ -1,14 +1,10 @@
 import logging
-import threading
-from concurrent import futures
 
 from .configs.watcher import ConfigWatcher
 from .discovery import Discovery
 from .service import Service
 from .events import wait_on_event
 
-
-MAX_WORKER_THREADS = 8
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +21,6 @@ class Reporter(ConfigWatcher):
 
     watched_configurables = (Discovery, Service)
 
-    def __init__(self, *args, **kwargs):
-        super(Reporter, self).__init__(*args, **kwargs)
-
-        self.check_threads = {}
-        self.pool = futures.ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
-
-    def run(self):
-        """
-        Since each check loop the reporter runs is a separate thread the main
-        thread does nothing and waits on the `shutdown` thread event.
-        """
-        logger.info("Running reporter.")
-
-        wait_on_event(self.shutdown)
-
     def on_discovery_add(self, discovery):
         """
         Added discovery method hook. Calls the `connect()` method on the new
@@ -49,13 +30,13 @@ class Reporter(ConfigWatcher):
 
     def on_discovery_update(self, name, new_config):
         """
-        Once a Discovery is updated we update each associated Service's
-        `is_up` flag to None so that the next iteration of the `run_checks`
+        Once a Discovery is updated we update each associated Service to reset
+        its up/down status so that the next iteration of the `check_loop`
         loop does the proper reporting again.
         """
         for service in self.configurables[Service].values():
             if service.discovery == name:
-                service.is_up = None
+                service.reset_status()
 
     def on_discovery_remove(self, name):
         """
@@ -69,19 +50,13 @@ class Reporter(ConfigWatcher):
         When a new service is added, a worker thread is launched to
         periodically run the checks for that service.
         """
-        self.check_threads[service.name] = threading.Thread(
-            target=self.check_loop,
-            args=(service,)
-        )
-        self.check_threads[service.name].start()
+        self.launch_thread(service.name, self.check_loop, service)
 
     def on_service_remove(self, name):
         """
-        If a service is removed, the associated check loop thread is joined
-        and removed from the `check_threads` dictionary.
+        If a service is removed, the associated check loop thread is killed.
         """
-        self.check_threads[name].join()
-        del self.check_threads[name]
+        self.kill_thread(name)
 
     def check_loop(self, service):
         """
@@ -90,7 +65,6 @@ class Reporter(ConfigWatcher):
         job to run all of the service's checks and then pause for the
         configured interval.
         """
-        threading.currentThread().setName("%s check loop" % service.name)
         logger.info("Starting check loop for service '%s'", service.name)
 
         def handle_checks_result(f):
@@ -116,8 +90,11 @@ class Reporter(ConfigWatcher):
                 service in self.configurables[Service].values()
                 and not self.shutdown.is_set()
         ):
-            self.pool.submit(self.run_checks, service)\
-                     .add_done_callback(handle_checks_result)
+            self.work_pool.submit(
+                self.run_checks, service
+            ).add_done_callback(
+                handle_checks_result
+            )
 
             logger.debug("sleeping for %s seconds", service.check_interval)
             wait_on_event(self.shutdown, timeout=service.check_interval)
@@ -157,7 +134,3 @@ class Reporter(ConfigWatcher):
         """
         for discovery in self.configurables[Discovery].values():
             discovery.stop()
-        for thread in self.check_threads.values():
-            thread.join()
-
-        self.pool.shutdown()

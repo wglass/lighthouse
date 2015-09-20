@@ -5,7 +5,7 @@ except ImportError:
 
 import json
 
-from mock import patch, Mock
+from mock import patch, Mock, call
 
 from kazoo import client, exceptions
 
@@ -43,7 +43,7 @@ class ZookeeperTests(unittest.TestCase):
     def test_not_connected_by_default(self, mock_client):
         zk = ZookeeperDiscovery()
 
-        self.assertEqual(zk.connected, False)
+        self.assertEqual(zk.connected.is_set(), False)
 
     def test_connect_via_kazoo_client(self, mock_client):
         zk = ZookeeperDiscovery()
@@ -53,31 +53,15 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.connect()
 
-        self.assertEqual(zk.connected, True)
-
         self.assertEqual(zk.client, mock_client.KazooClient.return_value)
 
         mock_client.KazooClient.assert_called_once_with(
             hosts="zk01.int,zk02.int"
         )
-        zk.client.start.assert_called_once_with(timeout=30)
+        zk.client.start_async.assert_called_once_with()
         zk.client.add_listener.assert_called_once_with(
             zk.handle_connection_change
         )
-
-    def test_connect_with_custom_timeout(self, mock_client):
-        zk = ZookeeperDiscovery()
-        zk.apply_config(
-            {
-                "hosts": ["zk01.int", "zk02.int"],
-                "path": "/lighthouse",
-                "connect_timeout": 20
-            }
-        )
-
-        zk.connect()
-
-        zk.client.start.assert_called_once_with(timeout=20)
 
     def test_apply_config_alters_hosts_and_path(self, mock_client):
         zk = ZookeeperDiscovery()
@@ -99,6 +83,7 @@ class ZookeeperTests(unittest.TestCase):
 
     def test_apply_config_updates_kazoo_hosts(self, mock_client):
         zk = ZookeeperDiscovery()
+
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
@@ -107,6 +92,7 @@ class ZookeeperTests(unittest.TestCase):
         self.assertEqual(zk.base_path, "/lighthouse")
 
         zk.connect()
+        zk.connected.set()
 
         zk.apply_config({
             "hosts": ["zk02.int", "zk03.int"], "path": "/services"
@@ -124,12 +110,11 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
-
-        self.assertEqual(zk.connected, True)
+        zk.connected.set()
 
         zk.handle_connection_change(client.KazooState.LOST)
 
-        self.assertEqual(zk.connected, False)
+        self.assertEqual(zk.connected.is_set(), False)
 
     def test_handle_connection_lost_shutdown_set(self, mock_client):
         mock_client.KazooState = client.KazooState
@@ -140,14 +125,13 @@ class ZookeeperTests(unittest.TestCase):
         )
 
         zk.connect()
-
-        self.assertEqual(zk.connected, True)
+        zk.connected.set()
 
         zk.shutdown.set()
 
         zk.handle_connection_change(client.KazooState.LOST)
 
-        self.assertEqual(zk.connected, False)
+        self.assertEqual(zk.connected.is_set(), False)
 
     def test_handle_connection_suspended(self, mock_client):
         mock_client.KazooState = client.KazooState
@@ -158,12 +142,11 @@ class ZookeeperTests(unittest.TestCase):
         )
 
         zk.connect()
-
-        self.assertEqual(zk.connected, True)
+        zk.connected.set()
 
         zk.handle_connection_change(client.KazooState.SUSPENDED)
 
-        self.assertEqual(zk.connected, False)
+        self.assertEqual(zk.connected.is_set(), False)
 
     def test_handle_connection_reestablished(self, mock_client):
         mock_client.KazooState = client.KazooState
@@ -174,16 +157,15 @@ class ZookeeperTests(unittest.TestCase):
         )
 
         zk.connect()
-
-        self.assertEqual(zk.connected, True)
+        zk.connected.set()
 
         zk.handle_connection_change(client.KazooState.LOST)
 
-        self.assertEqual(zk.connected, False)
+        self.assertEqual(zk.connected.is_set(), False)
 
         zk.handle_connection_change(client.KazooState.CONNECTED)
 
-        self.assertEqual(zk.connected, True)
+        self.assertEqual(zk.connected.is_set(), True)
 
     def test_disconnect_stops_and_closes_client(self, mock_client):
         zk = ZookeeperDiscovery()
@@ -198,7 +180,11 @@ class ZookeeperTests(unittest.TestCase):
         zk.client.stop.assert_called_once_with()
         zk.client.close.assert_called_once_with()
 
-    def test_report_up_not_connected(self, mock_client):
+    @patch("lighthouse.zookeeper.wait_on_any")
+    def test_report_up_waits_until_connected(self, wait_on_any, mock_client):
+        service = Mock(metadata={})
+        service.name = "app03"
+
         zk = ZookeeperDiscovery()
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
@@ -206,11 +192,11 @@ class ZookeeperTests(unittest.TestCase):
 
         zk.connect()
 
-        zk.connected = False
+        zk.report_up(service, 8888)
 
-        zk.report_up(Mock(), 8888)
+        args, _ = wait_on_any.call_args
 
-        self.assertEqual(zk.client.set.called, False)
+        self.assertIn(zk.connected, args)
 
     @patch("lighthouse.peer.socket")
     @patch("lighthouse.node.socket")
@@ -225,6 +211,7 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
+        zk.connected.set()
 
         znode = Mock(owner_session_id="0x1234")
         zk.client.exists.return_value = znode
@@ -272,6 +259,7 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
+        zk.connected.set()
 
         zk.client.exists.return_value = None
 
@@ -323,6 +311,7 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
+        zk.connected.set()
 
         znode = Mock(owner_session_id="0x1234")
         zk.client.exists.return_value = znode
@@ -367,21 +356,22 @@ class ZookeeperTests(unittest.TestCase):
 
         txn.commit.assert_called_once_with()
 
-    def test_report_down_not_connected(self, mock_client):
+    @patch("lighthouse.zookeeper.wait_on_any")
+    def test_report_down_waits_for_connection(self, wait_on_any, mock_client):
         zk = ZookeeperDiscovery()
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
 
-        zk.connected = False
-
         service = Mock(host="redis1")
         service.name = "webcache"
 
         zk.report_down(service, 6379)
 
-        self.assertEqual(zk.client.delete.called, False)
+        args, _ = wait_on_any.call_args
+
+        self.assertIn(zk.connected, args)
 
     @patch("lighthouse.node.socket")
     def test_report_down(self, mock_socket, mock_client):
@@ -391,6 +381,7 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
+        zk.connected.set()
 
         service = Mock()
         service.name = "userdb"
@@ -407,6 +398,7 @@ class ZookeeperTests(unittest.TestCase):
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
         zk.connect()
+        zk.connected.set()
 
         zk.client.delete.side_effect = exceptions.NoNodeError
 
@@ -414,23 +406,6 @@ class ZookeeperTests(unittest.TestCase):
         service.name = "webcache"
 
         zk.report_down(service, 6379)
-
-    @patch("lighthouse.zookeeper.threading")
-    def test_start_watching(self, mock_threading, mock_client):
-        zk = ZookeeperDiscovery()
-        zk.apply_config(
-            {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
-        )
-
-        cluster = Mock()
-
-        zk.start_watching(cluster)
-
-        mock_threading.Thread.assert_called_once_with(
-            name="zookeeper", target=zk.launch_child_watcher,
-            args=(cluster,)
-        )
-        mock_threading.Thread.return_value.start.assert_called_once_with()
 
     def test_stop_watching(self, mock_client):
         zk = ZookeeperDiscovery()
@@ -470,68 +445,50 @@ class ZookeeperTests(unittest.TestCase):
 
         self.assertEqual(zk.watched_clusters, set([cluster1]))
 
-    @patch("lighthouse.zookeeper.wait_on_event")
-    @patch("lighthouse.zookeeper.threading")
+    @patch("lighthouse.zookeeper.wait_on_any")
     def test_children_change_including_invalid_one(self,
-                                                   threading,
-                                                   wait_on_event,
+                                                   wait_on_any,
                                                    mock_client):
         zk = ZookeeperDiscovery()
+        zk.connect()
+        zk.connected.set()
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
-        zk.connect()
-        zk.nodes_updated = Mock()
+
+        callback = Mock()
 
         cluster = Mock()
         cluster.name = "webapp"
 
-        children = ["app01:8888", "app03:8888", "app04:8888"]
+        child_payloads = [
+            [b"some invalid string ok"],
+            [json.dumps(
+                {"host": "app03", "ip": "10.0.1.8", "port": "8888"}
+            ).encode()],
+            [json.dumps({
+                "host": "app04", "ip": "10.0.1.3", "port": "8888",
+                "peer": json.dumps(
+                    {"name": "app04.int", "ip": "10.0.1.3", "port": 1024}
+                ),
+            }).encode()],
+        ]
 
-        def get_child_payload(child_path):
-            if child_path == "/lighthouse/webapp/app01:8888":
-                return [b"some invalid string ok"]
-            elif child_path == "/lighthouse/webapp/app02:8888":
-                return [json.dumps(
-                    {"host": "app02", "ip": "10.0.1.10", "port": "8888"}
-                ).encode()]
-            elif child_path == "/lighthouse/webapp/app03:8888":
-                return [json.dumps(
-                    {"host": "app03", "ip": "10.0.1.8", "port": "8888"}
-                ).encode()]
-            elif child_path == "/lighthouse/webapp/app04:8888":
-                return [json.dumps({
-                    "host": "app04", "ip": "10.0.1.3", "port": "8888",
-                    "peer": json.dumps(
-                        {"name": "app04.int", "ip": "10.0.1.3", "port": 1024}
-                    ),
-                }).encode()]
-            else:
-                raise AssertionError(
-                    "Looked up unaccounted for child node: %s" % child_path
-                )
+        def get_child_payload(*args):
+            return child_payloads.pop(0)
 
         zk.client.get.side_effect = get_child_payload
 
-        threading.Event.return_value.is_set.return_value = False
+        def fire_immediately(watch):
+            watch(["app01:8888", "app03:8888", "app04:8888"])
 
-        def fire_immediately(node_path, callback):
-            callback(children)
-            zk.stop_events[node_path].is_set.return_value = True
+        zk.client.ChildrenWatch.return_value.side_effect = fire_immediately
 
-        zk.client.ChildrenWatch.side_effect = fire_immediately
+        zk.start_watching(cluster, callback)
 
-        zk.launch_child_watcher(cluster)
+        wait_on_any.assert_called_once_with(zk.connected, zk.shutdown)
 
-        self.assertEqual(
-            zk.stop_events["/lighthouse/webapp"], threading.Event.return_value
-        )
-
-        wait_on_event.assert_called_once_with(
-            zk.stop_events["/lighthouse/webapp"], None
-        )
-
-        self.assertEqual(zk.nodes_updated.set.called, True)
+        callback.assert_called_once_with()
 
         self.assertEqual(len(cluster.nodes), 2)
         self.assertEqual(cluster.nodes[0].host, "app03")
@@ -542,18 +499,14 @@ class ZookeeperTests(unittest.TestCase):
         self.assertEqual(cluster.nodes[1].peer.ip, "10.0.1.3")
         self.assertEqual(cluster.nodes[1].peer.port, 1024)
 
-    @patch("lighthouse.zookeeper.wait_on_event")
-    @patch("lighthouse.zookeeper.threading")
-    def test_children_change_stop_event_set(self,
-                                            threading,
-                                            wait_on_event,
-                                            mock_client):
+    @patch("lighthouse.zookeeper.wait_on_any")
+    def test_watch_no_node_at_first(self, wait_on_any, mock_client):
         zk = ZookeeperDiscovery()
+        zk.connect()
+        zk.connected.set()
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
-        zk.connect()
-        zk.nodes_updated = Mock()
 
         node1 = Mock()
         node2 = Mock()
@@ -562,49 +515,34 @@ class ZookeeperTests(unittest.TestCase):
         cluster.name = "webapp"
         cluster.nodes = [node1, node2]
 
-        children = ["app01:8888", "app03:8888", "app04:8888"]
+        callback = Mock()
 
-        def get_child_payload(child_path):
-            return [json.dumps(
-                {"host": "app02", "ip": "10.0.1.10", "port": "8888"}
-            ).encode()]
+        exists_results = [False, True]
 
-        zk.client.get.side_effect = get_child_payload
+        def get_next_result(*args):
+            result = exists_results.pop(0)
 
-        threading.Event.return_value.is_set.return_value = False
+            if not exists_results:
+                zk.stop_events["/lighthouse/webapp"].set()
 
-        def fire_immediately(path, callback):
-            zk.stop_events[path].is_set.return_value = True
-            callback(children)
+            return result
 
-        zk.client.ChildrenWatch.side_effect = fire_immediately
+        zk.client.exists.side_effect = get_next_result
 
-        zk.launch_child_watcher(cluster)
+        zk.start_watching(cluster, callback)
 
-        self.assertEqual(
-            zk.stop_events["/lighthouse/webapp"], threading.Event.return_value
-        )
+        wait_on_any.assert_has_calls([
+            call(zk.stop_events["/lighthouse/webapp"], zk.shutdown, timeout=2)
+        ])
 
-        wait_on_event.assert_called_once_with(
-            zk.stop_events["/lighthouse/webapp"], None
-        )
-
-        self.assertEqual(zk.nodes_updated.set.called, False)
-
-        self.assertEqual(cluster.nodes, [node1, node2])
-
-    @patch("lighthouse.zookeeper.wait_on_event")
-    @patch("lighthouse.zookeeper.threading")
-    def test_children_missing_stop_event(self,
-                                         threading,
-                                         wait_on_event,
-                                         mock_client):
+    @patch("lighthouse.zookeeper.wait_on_any")
+    def test_watch_connection_error(self, wait_on_any, mock_client):
         zk = ZookeeperDiscovery()
+        zk.connect()
+        zk.connected.set()
         zk.apply_config(
             {"hosts": ["zk01.int", "zk02.int"], "path": "/lighthouse"}
         )
-        zk.connect()
-        zk.nodes_updated = Mock()
 
         node1 = Mock()
         node2 = Mock()
@@ -613,29 +551,15 @@ class ZookeeperTests(unittest.TestCase):
         cluster.name = "webapp"
         cluster.nodes = [node1, node2]
 
-        children = ["app01:8888", "app03:8888", "app04:8888"]
+        callback = Mock()
 
-        def get_child_payload(child_path):
-            return [json.dumps(
-                {"host": "app02", "ip": "10.0.1.10", "port": "8888"}
-            ).encode()]
+        def mock_exists(*args):
+            zk.shutdown.set()
 
-        zk.client.get.side_effect = get_child_payload
+            raise exceptions.ConnectionClosedError
 
-        threading.Event.return_value.is_set.return_value = False
+        zk.client.exists.side_effect = mock_exists
 
-        def fire_immediately(path, callback):
-            zk.stop_events.pop(path)
-            callback(children)
+        zk.start_watching(cluster, callback)
 
-        zk.client.ChildrenWatch.side_effect = fire_immediately
-
-        zk.launch_child_watcher(cluster)
-
-        self.assertEqual(zk.stop_events, {})
-
-        self.assertEqual(wait_on_event.called, False)
-
-        self.assertEqual(zk.nodes_updated.set.called, False)
-
-        self.assertEqual(cluster.nodes, [node1, node2])
+        wait_on_any.assert_called_once_with(zk.connected, zk.shutdown)
