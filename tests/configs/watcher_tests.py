@@ -1,10 +1,7 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 from mock import patch, call, Mock
 from concurrent import futures
+
+from tests import cases
 
 from lighthouse.configs.watcher import ConfigWatcher
 
@@ -30,7 +27,7 @@ class TestWatcher(ConfigWatcher):
         self.wind_down_called = True
 
 
-class ConfigWatcherTests(unittest.TestCase):
+class ConfigWatcherTests(cases.WatcherTestCase):
 
     def setUp(self):
         super(ConfigWatcherTests, self).setUp()

@@ -1,17 +1,14 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 from mock import Mock, patch
 from concurrent import futures
+
+from tests import cases
 
 from lighthouse.service import Service
 from lighthouse.discovery import Discovery
 from lighthouse.reporter import Reporter
 
 
-class ReporterTests(unittest.TestCase):
+class ReporterTests(cases.WatcherTestCase):
 
     def setUp(self):
         super(ReporterTests, self).setUp()

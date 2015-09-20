@@ -1,10 +1,7 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+from mock import Mock, patch
 
-from mock import Mock, call, patch
-from concurrent import futures
+
+from tests import cases
 
 from lighthouse.balancer import Balancer
 from lighthouse.cluster import Cluster
@@ -12,29 +9,7 @@ from lighthouse.discovery import Discovery
 from lighthouse.writer import Writer
 
 
-class WriterTests(unittest.TestCase):
-
-    def setUp(self):
-        super(WriterTests, self).setUp()
-
-        futures_patcher = patch("lighthouse.configs.watcher.futures")
-        mock_futures = futures_patcher.start()
-
-        self.addCleanup(futures_patcher.stop)
-
-        self.mock_work_pool = mock_futures.ThreadPoolExecutor.return_value
-
-        def run_immediately(fn, *args, **kwargs):
-            f = futures.Future()
-
-            try:
-                f.set_result(fn(*args, **kwargs))
-            except Exception as e:
-                f.set_exception(e)
-
-            return f
-
-        self.mock_work_pool.submit.side_effect = run_immediately
+class WriterTests(cases.WatcherTestCase):
 
     def test_sync_balancer_files(self):
         writer = Writer("/etc/configs")
@@ -145,10 +120,12 @@ class WriterTests(unittest.TestCase):
 
         writer.add_configurable(Cluster, "web", cluster3)
 
-        discovery.start_watching.assert_has_calls([
-            call(cluster2, writer.sync_balancer_files),
-            call(cluster3, writer.sync_balancer_files),
-        ])
+        discovery.start_watching.assert_any_call(
+            cluster2, writer.sync_balancer_files
+        )
+        discovery.start_watching.assert_any_call(
+            cluster3, writer.sync_balancer_files
+        )
 
     def test_update_cluster_switches_discoveries(self):
         riak_discovery = Mock()
