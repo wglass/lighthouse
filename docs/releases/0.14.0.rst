@@ -1,0 +1,5 @@
+0.14.0
+~~~~~~
+
+  * Big refactor to how concurrecy is handled, should fix situations where
+    the writer process would spit out an incomplete HAProxy config when restarted.
