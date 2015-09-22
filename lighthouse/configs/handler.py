@@ -68,6 +68,9 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
             )
             return
 
+        if not result:
+            return
+
         self.on_add(self.target_class, name, result)
 
     def on_modified(self, event):

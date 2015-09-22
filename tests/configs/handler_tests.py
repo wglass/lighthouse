@@ -101,6 +101,27 @@ class ConfigChangeHandlerTests(unittest.TestCase):
         assert on_update.called is False
         assert on_delete.called is False
 
+    @patch("lighthouse.configs.handler.yaml")
+    def test_on_created_from_config_is_none(self, yaml):
+        created_event = Mock(src_path="/foo/bar/service.yaml")
+
+        target_class = Mock()
+        target_class.from_config.return_value = None
+
+        on_add = Mock()
+        on_update = Mock()
+        on_delete = Mock()
+
+        handler = ConfigFileChangeHandler(
+            target_class, on_add, on_update, on_delete
+        )
+
+        handler.on_created(created_event)
+
+        assert on_add.called is False
+        assert on_update.called is False
+        assert on_delete.called is False
+
     @patch("lighthouse.configs.handler.os")
     def test_on_modified_skips_dir_srcpaths(self, mock_os):
         target_class = Mock()
