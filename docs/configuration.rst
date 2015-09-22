@@ -5,7 +5,8 @@ The lighthouse scripts are configured by passing in a root config directory whic
 contains individual YAML_ config files and follows a certain layout::
 
     <config dir>/
-      |____haproxy.yaml
+      |____balancers/
+      |      |____haproxy.yaml
       |____discovery/
       |      |____zookeeper.yaml
       |____clusters/
@@ -22,7 +23,7 @@ There are four types of config file:
 * **balancer**:
 
   Files that configure the locally-running load balancer(s).  These live in the
-  root of the config directory. The project includes a plugin for HAProxy as a
+  ``balancers`` subdirectory. The project includes a plugin for HAProxy as a
   balancer.
 
   :doc:`configuration/haproxy`
