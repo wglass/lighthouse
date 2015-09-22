@@ -1,5 +1,6 @@
 config_file: "/etc/haproxy.cfg"
 socket_file: "/var/run/haproxy.sock"
+pid_file: "/var/run/haproxy.pid"
 global:
   - "daemon"
   - "maxconn 4000"

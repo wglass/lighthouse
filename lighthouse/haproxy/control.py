@@ -1,6 +1,7 @@
 import collections
 import errno
 import logging
+import os
 import re
 import socket
 import subprocess
@@ -29,27 +30,28 @@ class HAProxyControl(object):
     Also allows for sending commands to the HAProxy control socket itself.
     """
 
-    def __init__(self, config_file_path, socket_file_path):
+    def __init__(self, config_file_path, socket_file_path, pid_file_path):
         self.config_file_path = config_file_path
         self.socket_file_path = socket_file_path
+        self.pid_file_path = pid_file_path
+
         self.peer = Peer.current()
 
     def restart(self):
         """
         Performs a soft reload of the HAProxy process.
         """
-        try:
-            info = self.get_info()
-        except Exception:
-            info = {}
-        pid = info.get("pid")
         version = self.get_version()
 
-        command = ["haproxy", "-f", self.config_file_path]
+        command = [
+            "haproxy",
+            "-f", self.config_file_path, "-p", self.pid_file_path
+        ]
         if version and version >= (1, 5, 0):
             command.extend(["-L", self.peer.name])
-        if pid:
-            command.extend(["-sf", pid])
+        if os.path.exists(self.pid_file_path):
+            with open(self.pid_file_path) as fd:
+                command.extend(["-sf", fd.read().replace("\n", "")])
 
         try:
             output = subprocess.check_output(command)
