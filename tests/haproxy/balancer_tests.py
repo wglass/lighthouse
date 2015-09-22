@@ -26,6 +26,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             HAProxy.validate_config,
             {
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -34,7 +35,18 @@ class HAProxyBalancerTests(unittest.TestCase):
             ValueError,
             HAProxy.validate_config,
             {
-                "config_file": "/etc/haproxy/haproxy.conf"
+                "config_file": "/etc/haproxy/haproxy.conf",
+                "pid_file": "/var/run/haproxy.pid",
+            }
+        )
+
+    def test_pid_file_required(self, Config, Control):
+        self.assertRaises(
+            ValueError,
+            HAProxy.validate_config,
+            {
+                "socket_file": "/var/run/haproxy.sock",
+                "config_file": "/etc/haproxy/haproxy.conf",
             }
         )
 
@@ -56,6 +68,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             HAProxy.validate_config({
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             })
         except ValueError:
             value_error_raised = True
@@ -69,6 +82,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "upstreams": [
@@ -86,6 +100,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "port": 8800,
@@ -101,6 +116,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "port": 8800,
@@ -119,6 +135,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "port": 8800,
@@ -137,6 +154,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             HAProxy.validate_config({
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "port": 8800,
@@ -158,6 +176,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -173,6 +192,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -199,6 +219,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -221,6 +242,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -250,6 +272,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
 
@@ -265,6 +288,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "global": ["user haproxy", "nopoll"],
             }
         )
@@ -287,6 +311,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "defaults": ["timeout connect 4000", "invalid line ok"]
             }
         )
@@ -306,6 +331,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "bind_address": "127.0.0.1"
             }
         )
@@ -320,6 +346,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "meta_clusters": {
                     "api": {"port": 8000},
                     "compute": {"port": 7777},
@@ -341,6 +368,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "stats": {"port": 9999}
             }
         )
@@ -363,6 +391,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "stats": {
                     "port": 9999, "uri": "/haproxy_stats",
                     "timeouts": {
@@ -395,6 +424,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
                 "proxies": {
                     "cc_processor": {
                         "port": 8800,
@@ -445,6 +475,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False
@@ -471,6 +502,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False
@@ -511,6 +543,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False
@@ -563,6 +596,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False
@@ -611,6 +645,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False
@@ -654,6 +689,7 @@ class HAProxyBalancerTests(unittest.TestCase):
             {
                 "config_file": "/etc/haproxy/haproxy.conf",
                 "socket_file": "/var/run/haproxy.sock",
+                "pid_file": "/var/run/haproxy.pid",
             }
         )
         balancer.restart_required = False

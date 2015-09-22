@@ -70,6 +70,7 @@ config.
 
   config_file: "/etc/haproxy.cfg"
   socket_file: "/var/run/haproxy.sock"
+  pid_file: "/var/run/haproxy.pid"
   meta_clusters:
     webapi:
       port: 8888

@@ -36,6 +36,10 @@ class HAProxy(Balancer):
         self.restart_required = True
         self.restart_interval = MIN_TIME_BETWEEN_RESTARTS
 
+        self.haproxy_config_path = None
+        self.config_file = None
+        self.control = None
+
     @classmethod
     def validate_dependencies(cls):
         """
@@ -48,12 +52,14 @@ class HAProxy(Balancer):
     def validate_config(cls, config):
         """
         Validates that a config file path and a control socket file path
-        are both present in the HAProxy config.
+        and pid file path are all present in the HAProxy config.
         """
         if "config_file" not in config:
             raise ValueError("No config file path given")
         if "socket_file" not in config:
             raise ValueError("No control socket path given")
+        if "pid_file" not in config:
+            raise ValueError("No PID file path given")
         if "stats" in config and "port" not in config["stats"]:
             raise ValueError("Stats interface defined, but no port given")
         if "proxies" in config:
@@ -137,7 +143,7 @@ class HAProxy(Balancer):
         )
 
         self.control = HAProxyControl(
-            config["config_file"], config["socket_file"]
+            config["config_file"], config["socket_file"], config["pid_file"],
         )
 
     def sync_file(self, clusters):

@@ -1,17 +1,24 @@
 import errno
 import socket
 import subprocess
+import sys
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
-from mock import patch, Mock
+from mock import patch, Mock, mock_open
 
 from lighthouse.haproxy.control import (
     HAProxyControl,
     UnknownCommandError, PermissionError, UnknownServerError
 )
+
+
+if sys.version_info[0] == 3:
+    builtin_module = "builtins"
+else:
+    builtin_module = "__builtin__"
 
 
 class HAProxyControlTests(unittest.TestCase):
@@ -41,7 +48,9 @@ class HAProxyControlTests(unittest.TestCase):
 
     @patch("lighthouse.haproxy.control.Peer")
     def test_gets_current_peer(self, Peer):
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(ctl.peer, Peer.current.return_value)
 
@@ -52,7 +61,9 @@ class HAProxyControlTests(unittest.TestCase):
             "Copyright 2000-2014 Willy Tarreau <w@1wt.eu>"
         ))
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(ctl.get_version(), (1, 5, 9))
 
@@ -63,7 +74,9 @@ class HAProxyControlTests(unittest.TestCase):
         error = subprocess.CalledProcessError(-1, "haproxy")
         mock_subprocess.check_output.side_effect = error
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(ctl.get_version(), None)
 
@@ -73,7 +86,9 @@ class HAProxyControlTests(unittest.TestCase):
             "HA-Proxy version wefaewlfkjalwekja;kj",
         ))
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(ctl.get_version(), None)
 
@@ -82,7 +97,9 @@ class HAProxyControlTests(unittest.TestCase):
             "enable server rediscache/redis01": "OK"
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         result = ctl.enable_node("rediscache", "redis01")
 
@@ -93,7 +110,9 @@ class HAProxyControlTests(unittest.TestCase):
             "disable server rediscache/redis02": "OK"
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         result = ctl.disable_node("rediscache", "redis02")
 
@@ -108,7 +127,9 @@ rediscache,redis02,0,0,0,0,1000,0,0,0,1000
 web,app03,0,0,0,0,1000,0,0,0,0"""
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(
             ctl.get_active_nodes(),
@@ -141,7 +162,9 @@ web,app03,0,0,0,0,1000,0,0,0,0"""
             "show stat -1 4 -1": ""
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(
             ctl.get_active_nodes(),
@@ -158,7 +181,9 @@ Process_num: 1
 Pid: 12334"""
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(
             ctl.get_info(),
@@ -177,58 +202,88 @@ Pid: 12334"""
             "show info": ""
         }
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertEqual(ctl.get_info(), {})
 
     @patch.object(HAProxyControl, "get_version")
     @patch("lighthouse.haproxy.control.Peer")
+    @patch("lighthouse.haproxy.control.os")
     @patch("lighthouse.haproxy.control.subprocess")
-    def test_restart_with_peer(self, mock_subprocess, Peer, mock_get_version):
-        mock_get_version.return_value = (1, 5, 11)
-        self.stub_commands = {
-            "show info": """Name: HAProxy
-Pid: 12355"""
-        }
+    @patch(builtin_module + ".open", mock_open(read_data="12355"))
+    def test_restart_with_peer(
+            self, mock_subprocess, mock_os, Peer, get_version
+    ):
+        get_version.return_value = (1, 5, 11)
+        mock_os.path.exists.return_value = True
+
         peer = Mock(host="app08", port=8888)
-        peer.name = "app08:8888"
+        peer.name = "app08"
         Peer.current.return_value = peer
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         ctl.restart()
 
         mock_subprocess.check_output.assert_called_once_with([
-            "haproxy", "-f", "/etc/lighthouse",
-            "-L", "app08:8888", "-sf", "12355"
+            "haproxy", "-f", "/etc/haproxy.cfg", "-p", "/var/run/haproxy.pid",
+            "-L", "app08", "-sf", "12355"
         ])
 
     @patch.object(HAProxyControl, "get_version")
     @patch("lighthouse.haproxy.control.Peer")
+    @patch("lighthouse.haproxy.control.os")
     @patch("lighthouse.haproxy.control.subprocess")
-    def test_restart_without_peer(self, mock_subprocess, Peer, get_version):
+    @patch(builtin_module + ".open", mock_open(read_data="12355"))
+    def test_restart_without_peer(
+            self, mock_subprocess, mock_os, Peer, get_version
+    ):
         get_version.return_value = (1, 4, 9)
-        self.stub_commands = {
-            "show info": """Name: HAProxy
-Pid: 12355"""
-        }
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        mock_os.path.exists.return_value = True
+
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         ctl.restart()
 
         mock_subprocess.check_output.assert_called_once_with([
-            "haproxy", "-f", "/etc/lighthouse", "-sf", "12355"
+            "haproxy", "-f", "/etc/haproxy.cfg",  "-p", "/var/run/haproxy.pid",
+            "-sf", "12355"
+        ])
+
+    @patch.object(HAProxyControl, "get_version")
+    @patch("lighthouse.haproxy.control.Peer")
+    @patch("lighthouse.haproxy.control.os")
+    @patch("lighthouse.haproxy.control.subprocess")
+    def test_restart_without_peer_or_pid_file(
+            self, mock_subprocess, mock_os, Peer, get_version
+    ):
+        get_version.return_value = (1, 4, 9)
+        mock_os.path.exists.return_value = False
+
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
+
+        ctl.restart()
+
+        mock_subprocess.check_output.assert_called_once_with([
+            "haproxy", "-f", "/etc/haproxy.cfg",  "-p", "/var/run/haproxy.pid",
         ])
 
     @patch("lighthouse.haproxy.control.Peer")
+    @patch("lighthouse.haproxy.control.os")
     @patch("lighthouse.haproxy.control.subprocess")
-    def test_restart__process_error(self, mock_subprocess, Peer):
+    @patch(builtin_module + ".open", mock_open(read_data="12355"))
+    def test_restart__process_error(self, mock_subprocess, mock_os, Peer):
         mock_subprocess.CalledProcessError = subprocess.CalledProcessError
+        mock_os.path.exists.return_value = True
 
-        self.stub_commands = {
-            "show info": """Name: HAProxy
-Pid: 12355"""
-        }
         peer = Mock(host="app08", port=8888)
         peer.name = "app08:8888"
         Peer.current.return_value = peer
@@ -236,12 +291,15 @@ Pid: 12355"""
         error = subprocess.CalledProcessError(-1, "haproxy")
 
         mock_subprocess.check_output.side_effect = error
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         ctl.restart()
 
         mock_subprocess.check_output.assert_called_with([
-            "haproxy", "-f", "/etc/lighthouse", "-sf", "12355"
+            "haproxy", "-f", "/etc/haproxy.cfg", "-p", "/var/run/haproxy.pid",
+            "-sf", "12355"
         ])
 
     @patch.object(HAProxyControl, "get_info")
@@ -249,12 +307,14 @@ Pid: 12355"""
     @patch("lighthouse.haproxy.control.subprocess")
     def test_restart__get_info_error(self, mock_subprocess, mock_get_info):
         mock_get_info.side_effect = Exception("oh no!")
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         ctl.restart()
 
         mock_subprocess.check_output.assert_called_with([
-            "haproxy", "-f", "/etc/lighthouse",
+            "haproxy", "-f", "/etc/haproxy.cfg", "-p", "/var/run/haproxy.pid"
         ])
 
     @patch("lighthouse.haproxy.control.socket")
@@ -265,7 +325,9 @@ Pid: 12355"""
 
         mock_sock.recv.return_value = ""
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         ctl.send_command("show foobar")
 
@@ -287,7 +349,9 @@ Pid: 12355"""
             errno.ECONNREFUSED, ""
         )
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         result = ctl.send_command("show info")
 
@@ -304,7 +368,9 @@ Pid: 12355"""
             errno.ENOMEM, ""
         )
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertRaises(
             socket.error,
@@ -341,7 +407,9 @@ Pid: 12355"""
 
         mock_sock.recv.side_effect = get_next_chunk
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         result = ctl.send_command("show foobar")
 
@@ -372,7 +440,9 @@ Pid: 12355"""
 
         mock_sock.recv.side_effect = get_next_chunk
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertRaises(
             socket.error,
@@ -392,7 +462,9 @@ Pid: 12355"""
 
         mock_sock.recv.side_effect = get_next_chunk
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertRaises(
             UnknownCommandError,
@@ -412,7 +484,9 @@ Pid: 12355"""
 
         mock_sock.recv.side_effect = get_next_chunk
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertRaises(
             PermissionError,
@@ -432,7 +506,9 @@ Pid: 12355"""
 
         mock_sock.recv.side_effect = get_next_chunk
 
-        ctl = HAProxyControl("/etc/lighthouse", "/var/run/haproxy.sock")
+        ctl = HAProxyControl(
+            "/etc/haproxy.cfg", "/var/run/haproxy.sock", "/var/run/haproxy.pid"
+        )
 
         self.assertRaises(
             UnknownServerError,
