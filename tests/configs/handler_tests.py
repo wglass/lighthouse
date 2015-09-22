@@ -174,6 +174,31 @@ class ConfigChangeHandlerTests(unittest.TestCase):
         assert on_add.called is False
         assert on_delete.called is False
 
+    @patch("lighthouse.configs.handler.yaml")
+    def test_sort_yml_extension(self, yaml):
+        yaml.load.return_value = {"port": 8888, "extras": ["foo", "bar"]}
+        modified_event = Mock(src_path="/foo/bar/service.yml")
+
+        target_class = Mock()
+        on_add = Mock()
+        on_update = Mock()
+        on_delete = Mock()
+
+        handler = ConfigFileChangeHandler(
+            target_class, on_add, on_update, on_delete
+        )
+
+        handler.on_modified(modified_event)
+
+        on_update.assert_called_once_with(
+            target_class, "service", yaml.load.return_value
+        )
+        target_class.from_config.assert_called_once_with(
+            "service", yaml.load.return_value
+        )
+        assert on_add.called is False
+        assert on_delete.called is False
+
     def test_on_delete(self):
         deleted_event = Mock(src_path="/foo/bar/service.yaml")
 
