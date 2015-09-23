@@ -1,6 +1,6 @@
 FROM lighthouse.examples.base
 
-COPY configs/haproxy.yaml /etc/lighthouse/
+COPY configs/haproxy.yaml /etc/lighthouse/balancers/
 COPY configs/discovery/zookeeper.yaml /etc/lighthouse/discovery/
 COPY configs/clusters/cache.yaml /etc/lighthouse/clusters/
 COPY configs/services/api_widgets.yaml /etc/lighthouse/services/

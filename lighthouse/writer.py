@@ -1,6 +1,7 @@
 import logging
 
 from .configs.watcher import ConfigWatcher
+from .log.config import Logging
 from .balancer import Balancer
 from .cluster import Cluster
 from .discovery import Discovery
@@ -22,7 +23,7 @@ class Writer(ConfigWatcher):
     config file contents with the updated clusters.
     """
 
-    watched_configurables = (Balancer, Discovery, Cluster)
+    watched_configurables = (Logging, Balancer, Discovery, Cluster)
 
     def sync_balancer_files(self):
         """

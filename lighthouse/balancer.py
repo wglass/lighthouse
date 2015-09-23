@@ -18,6 +18,7 @@ class Balancer(Pluggable):
     called whenever an update to the topography of nodes happens.
     """
 
+    config_subdirectory = "balancers"
     entry_point = "lighthouse.balancers"
 
     def sync_file(self, clusters):

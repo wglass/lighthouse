@@ -18,6 +18,7 @@ RUN . /opt/venvs/lighthouse/bin/activate; cd /opt/src/lighthouse-*; pip install 
 RUN mkdir -p /var/log/supervisor/lighthouse
 COPY supervisord/lighthouse.conf /etc/supervisord/conf.d/
 
+RUN mkdir -p /etc/lighthouse/balancers
 RUN mkdir -p /etc/lighthouse/clusters
 RUN mkdir -p /etc/lighthouse/discovery
 RUN mkdir -p /etc/lighthouse/services

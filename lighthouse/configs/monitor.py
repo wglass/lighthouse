@@ -44,7 +44,9 @@ class ConfigFileMonitor(object):
                 continue
             if (
                 not self.target_class.config_subdirectory
-                and not file_name.endswith(".yaml")
+                and not (
+                    file_name.endswith(".yaml") or file_name.endswith(".yml")
+                )
             ):
                 continue
 

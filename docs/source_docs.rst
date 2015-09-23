@@ -13,3 +13,4 @@ Source Docs
    code/scripts
    code/helpers
    code/redis
+   code/logging

@@ -1,6 +1,7 @@
 import logging
 
 from .configs.watcher import ConfigWatcher
+from .log.config import Logging
 from .discovery import Discovery
 from .service import Service
 from .events import wait_on_event
@@ -19,7 +20,7 @@ class Reporter(ConfigWatcher):
     service's chosen discovery method.
     """
 
-    watched_configurables = (Discovery, Service)
+    watched_configurables = (Logging, Discovery, Service)
 
     def on_discovery_add(self, discovery):
         """

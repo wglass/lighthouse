@@ -19,7 +19,7 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
     When an event comes in the proper callback is fired with processed inputs.
     """
 
-    patterns = ("*.yaml")
+    patterns = ("*.yaml", "*.yml")
 
     def __init__(
         self, target_class, on_add, on_update, on_delete,
@@ -36,7 +36,11 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
         """
         Helper method for determining the basename of the affected file.
         """
-        return os.path.basename(event.src_path).replace(".yaml", "")
+        name = os.path.basename(event.src_path)
+        name = name.replace(".yaml", "")
+        name = name.replace(".yml", "")
+
+        return name
 
     def on_created(self, event):
         """
@@ -62,6 +66,9 @@ class ConfigFileChangeHandler(events.PatternMatchingEventHandler):
                 "Error when loading new config file %s: %s",
                 event.src_path, str(e)
             )
+            return
+
+        if not result:
             return
 
         self.on_add(self.target_class, name, result)

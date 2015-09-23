@@ -2,66 +2,39 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-import sys
 
-from mock import patch, mock_open
+from mock import patch
 
 from lighthouse.log import config
 
 
-if sys.version_info[0] == 3:
-    builtin_module = "builtins"
-else:
-    builtin_module = "__builtin__"
-
-
-@patch("lighthouse.log.config.logging")
 class LogConfigTests(unittest.TestCase):
 
-    @patch("lighthouse.log.config.yaml")
-    def test_load_yaml(self, mock_yaml, mock_logging):
-        fake_file = mock_open()
-
-        with patch(builtin_module + ".open", fake_file):
-            config.load_yaml("/etc/logging.yaml")
-
-        mock_yaml.load.assert_called_once_with(fake_file.return_value)
-        mock_logging.config.dictConfig.assert_called_once_with(
-            mock_yaml.load.return_value
+    def test_validate_config_is_noop(self):
+        self.assertEqual(
+            config.Logging.validate_config({}),
+            None
         )
 
-    def test_load_json(self, mock_logging):
+    @patch("lighthouse.log.config.logging")
+    def test_apply_config_calls_dictconfig(self, mock_logging):
+        log = config.Logging()
 
-        content = """
-{
-    "version": 1,
-    "disable_existing_loggers": false,
-    "loggers": {
-        "lighthouse": {
-            "handlers": ["syslog"],
-            "level": "DEBUG",
-            "propagate": true
-        }
-    }
-}
-        """
+        log.apply_config({"foo": "bar"})
 
-        with patch(builtin_module + ".open", mock_open(read_data=content)):
-            config.load_json("/etc/logging.json")
+        mock_logging.config.dictConfig.assert_called_once_with({"foo": "bar"})
 
-        mock_logging.config.dictConfig.assert_called_once_with({
-            "version": 1,
-            "disable_existing_loggers": False,
-            "loggers": {
-                "lighthouse": {
-                    "handlers": ["syslog"],
-                    "level": "DEBUG",
-                    "propagate": True
-                }
-            }
-        })
+    @patch("lighthouse.log.config.logging")
+    def test_from_config_returns_none_on_name_mismatch(self, mock_logging):
+        self.assertEqual(
+            config.Logging.from_config("foobar", {"foo": "bar"}),
+            None
+        )
 
-    def test_load_init(self, mock_logging):
-        config.load_ini("/etc/log.ini")
+    @patch("lighthouse.log.config.logging")
+    def test_from_config_with_matching_name(self, mock_logging):
+        log = config.Logging.from_config("logging", {"foo": "bar"})
 
-        mock_logging.config.fileConfig.assert_called_once_with("/etc/log.ini")
+        self.assertNotEqual(log, None)
+
+        self.assertEqual(log.name, "logging")
