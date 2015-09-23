@@ -1,0 +1,11 @@
+0.15.0
+~~~~~~
+
+  * Fixed a bug where HAProxy reloads weren't supplanting the existing processes
+
+  * Fixed a bug where files with .yml as the extension were being ignored.
+
+  * Config files for haproxy now live in a "balancers" subdirectory.
+
+  * Completely revamped the logging system, logging is now configured via a
+    "logging.yml" file at the root of the config directory.
