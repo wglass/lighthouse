@@ -1,42 +1,49 @@
-import json
 import logging
 import logging.config
 
-import yaml
+from lighthouse.configurable import Configurable
 
 
-def load_yaml(filename):
+log = logging.getLogger(__name__)
+
+
+class Logging(Configurable):
     """
-    Loads a logging config file in YAML.
+    Simple `Configurable` subclass that allows for runtime configuration of
+    python's logging infrastructure.
 
-    Treats the content of the YAML file as a dictConfig.
+    Since python provides a handy `dictConfig` function and our system already
+    provides the watched file contents as dicts the work here is tiny.
     """
-    try:
-        content = yaml.load(open(filename))
-    except Exception:
-        logging.exception("Error loading log config YAML file '%s'", filename)
-        return
 
-    logging.config.dictConfig(content)
+    name = "logging"
 
+    @classmethod
+    def from_config(cls, name, config):
+        """
+        Override of the base `from_config()` method that returns `None` if
+        the name of the config file isn't "logging".
 
-def load_json(filename):
-    """
-    Loads a logging config file in JSON.
+        We do this in case this `Configurable` subclass winds up sharing the
+        root of the config directory with other subclasses.
+        """
+        if name != cls.name:
+            return
 
-    Treats the content of the JSON file as a dictConfig.
-    """
-    try:
-        content = json.load(open(filename))
-    except Exception:
-        logging.exception("Error loading log config JSON file '%s'", filename)
-        return
+        return super(Logging, cls).from_config(name, config)
 
-    logging.config.dictConfig(content)
+    @classmethod
+    def validate_config(cls, config):
+        """
+        The validation of a logging config is a no-op at this time, the call
+        to dictConfig() when the config is applied will do the validation
+        for us.
+        """
+        pass
 
-
-def load_ini(filename):
-    """
-    Loads a standard logging ini config file.
-    """
-    logging.config.fileConfig(filename)
+    def apply_config(self, config):
+        """
+        Simple application of the given config via a call to the `logging`
+        module's `dictConfig()` method.
+        """
+        logging.config.dictConfig(config)

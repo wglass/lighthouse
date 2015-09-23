@@ -1,4 +1,3 @@
-import logging
 try:
     import unittest2 as unittest
 except ImportError:
@@ -14,7 +13,6 @@ from lighthouse.scripts import reporter
 class ReporterScriptTests(unittest.TestCase):
 
     def test_run_handles_keyboardinterrupt(self, parser, Reporter):
-        parser.parse_args.return_value.log_config = None
         Reporter.return_value.start.side_effect = KeyboardInterrupt
 
         reporter.run()
@@ -22,21 +20,7 @@ class ReporterScriptTests(unittest.TestCase):
         Reporter.return_value.stop.assert_called_once_with()
 
     @patch("lighthouse.scripts.reporter.log")
-    def test_debug_flag_set(self, log, parser, Reporter):
-        logger = log.setup.return_value
-
-        parser.parse_args.return_value.debug = True
-
+    def test_log_setup_called(self, log, parser, Reporter):
         reporter.run()
 
-        logger.setLevel.assert_called_once_with(logging.DEBUG)
-
-    @patch("lighthouse.scripts.reporter.log")
-    def test_debug_flag_not_set(self, log, parser, Reporter):
-        logger = log.setup.return_value
-
-        parser.parse_args.return_value.debug = False
-
-        reporter.run()
-
-        logger.setLevel.assert_called_once_with(logging.INFO)
+        log.setup.assert_called_once_with("REPORTER")
