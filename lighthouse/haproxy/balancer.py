@@ -1,5 +1,6 @@
 import collections
 import logging
+import threading
 import time
 
 import six
@@ -35,6 +36,7 @@ class HAProxy(Balancer):
         self.last_restart = 0
         self.restart_required = True
         self.restart_interval = MIN_TIME_BETWEEN_RESTARTS
+        self.restart_lock = threading.RLock()
 
         self.haproxy_config_path = None
         self.config_file = None
@@ -165,7 +167,8 @@ class HAProxy(Balancer):
             f.write(self.config_file.generate(clusters, version=version))
 
         if self.restart_required:
-            self.restart()
+            with self.restart_lock:
+                self.restart()
 
     def restart(self):
         """
