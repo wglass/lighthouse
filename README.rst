@@ -10,9 +10,9 @@ Lighthouse Service Discovery Tool
     :alt: Code Climate
     :target: https://codeclimate.com/github/wglass/lighthouse
 .. image::
-    https://readthedocs.org/projects/lighthouse/badge/?version=0.15.0
+    https://readthedocs.org/projects/lighthouse/badge/?version=0.15.1
     :alt: Documentation Status
-    :target: https://readthedocs.org/projects/lighthouse/?badge=0.15.0
+    :target: https://readthedocs.org/projects/lighthouse/?badge=0.15.1
 
 Lighthouse is a service node discovery system written in python, built with
 resilience, flexibility and ease-of-use in mind and inspired by Airbnb's

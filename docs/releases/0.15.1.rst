@@ -1,0 +1,5 @@
+0.15.1
+~~~~~~
+
+  * Fix a bug where HAProxy would be restarted several times simultaneously,
+    winding up with several processes at once.
