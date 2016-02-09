@@ -15,7 +15,7 @@ setup(
     author="William Glass",
     author_email="william.glass@gmail.com",
     url="http://github.com/wglass/lighthouse",
-    license="MIT",
+    license="Apache",
     classifiers=classifiers,
     packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,

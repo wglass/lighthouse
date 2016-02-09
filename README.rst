@@ -62,8 +62,8 @@ License
 ~~~~~~~~
 \(c\) 2014-2016 William Glass
 
-Lighthouse is licensed under the terms of the MIT license.  See the LICENSE_
-file for more details.
+Lighthouse is licensed under the terms of the Apache license (2.0).  See the
+LICENSE_ file for more details.
 
 .. _`Read the Docs`: http://lighthouse.readthedocs.org/
 .. _SmartStack: http://nerds.airbnb.com/smartstack-service-discovery-cloud/

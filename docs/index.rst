@@ -48,8 +48,8 @@ on GitHub.
 License
 ~~~~~~~
 
-Lighthouse is licensed under the terms of the MIT license.  See the LICENSE_
-file for more details.
+Lighthouse is licensed under the terms of the Apache license (2.0).  See the
+LICENSE_ file for more details.
 
 .. _SmartStack: http://nerds.airbnb.com/smartstack-service-discovery-cloud/
 .. _Zookeeper: https://zookeeper.apache.org
