@@ -3,12 +3,12 @@ Lighthouse Service Discovery Tool
 
 .. image::
     https://img.shields.io/pypi/v/lighthouse.svg
-    :target: PyPI_
+    :target: http://pypi.python.org/pypi/lighthouse
     :alt: Python Package Version
 .. image::
     https://readthedocs.org/projects/lighthouse/badge/?version=latest
     :alt: Documentation Status
-    :target: https://readthedocs.org/projects/lighthouse/?badge=latest
+    :target: http://lighthouse.readthedocs.org/en/latest/
 .. image::
     https://travis-ci.org/wglass/lighthouse.svg?branch=master
     :alt: Build Status
