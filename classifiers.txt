@@ -1,4 +1,4 @@
-Development Status :: 4 - Beta
+Development Status :: 5 - Production/Stable
 Environment :: Console
 Environment :: MacOS X
 Environment :: No Input/Output (Daemon)

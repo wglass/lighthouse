@@ -1,0 +1,8 @@
+1.0.0
+~~~~~
+
+  * Initial stable release!
+
+  * Updates to fix stricter style tests
+
+  * Re-vamped the look and feel of the generated docs
