@@ -29,8 +29,8 @@ class MetaFrontendStanza(Stanza):
         for cluster in members:
             if "acl" not in cluster.haproxy:
                 logger.error(
-                    "Cluster %s is part of meta-cluster %s,"
-                    + " but no acl rule defined.",
+                    "Cluster %s is part of meta-cluster %s," +
+                    " but no acl rule defined.",
                     cluster.name, name
                 )
                 continue

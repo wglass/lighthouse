@@ -77,10 +77,10 @@ class NodeTests(unittest.TestCase):
 
     def test_deserialize(self):
         result = Node.deserialize(
-            '{"host": "app03", "ip": "4.4.4.4", "port": 443,'
-            + ' "peer": "{'
-            + '\\"name\\": \\"host04\\", \\"ip\\": \\"10.10.10.10\\"'
-            + '}"}'
+            '{"host": "app03", "ip": "4.4.4.4", "port": 443,' +
+            ' "peer": "{' +
+            '\\"name\\": \\"host04\\", \\"ip\\": \\"10.10.10.10\\"' +
+            '}"}'
         )
 
         self.assertEqual(result.host, "app03")
@@ -91,10 +91,10 @@ class NodeTests(unittest.TestCase):
 
     def test_deserialize_bytes(self):
         result = Node.deserialize(
-            b'{"host": "app02", "ip": "4.4.4.4", "port": 443,'
-            + b' "peer": "{'
-            + b'\\"name\\": \\"host04\\", \\"ip\\": \\"10.10.10.10\\"'
-            + b'}"}'
+            b'{"host": "app02", "ip": "4.4.4.4", "port": 443,' +
+            b' "peer": "{' +
+            b'\\"name\\": \\"host04\\", \\"ip\\": \\"10.10.10.10\\"' +
+            b'}"}'
         )
 
         self.assertEqual(result.host, "app02")

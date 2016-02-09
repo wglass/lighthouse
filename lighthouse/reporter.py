@@ -88,8 +88,8 @@ class Reporter(ConfigWatcher):
                 discovery.report_down(service, port)
 
         while (
-                service in self.configurables[Service].values()
-                and not self.shutdown.is_set()
+                service in self.configurables[Service].values() and
+                not self.shutdown.is_set()
         ):
             self.work_pool.submit(
                 self.run_checks, service

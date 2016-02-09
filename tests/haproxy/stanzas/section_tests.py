@@ -21,10 +21,10 @@ class SectionTests(unittest.TestCase):
 
         self.assertTrue(
             str(section).startswith(
-                "#\n"
-                + "# This is a section, ok\n"
-                + "#\n"
-                + "\n"
+                "#\n" +
+                "# This is a section, ok\n" +
+                "#\n" +
+                "\n"
             )
         )
 

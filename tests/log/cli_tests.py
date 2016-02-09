@@ -192,9 +192,9 @@ class LogCLITests(unittest.TestCase):
         )
         Formatter.return_value.format.assert_called_once_with(record)
         Formatter.assert_called_once_with(
-            '<YELLOW>[%(asctime)s W]<RESET>'
-            + '<CYAN>[%(threadName)s]<RESET>'
-            + ' %(message)s', '%Y-%m-%d %H:%M:%S'
+            '<YELLOW>[%(asctime)s W]<RESET>' +
+            '<CYAN>[%(threadName)s]<RESET>' +
+            ' %(message)s', '%Y-%m-%d %H:%M:%S'
         )
 
     @patch.object(cli.CLIHandler, "is_tty", False)

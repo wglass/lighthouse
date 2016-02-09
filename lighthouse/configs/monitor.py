@@ -43,8 +43,8 @@ class ConfigFileMonitor(object):
             if os.path.isdir(os.path.join(self.file_path, file_name)):
                 continue
             if (
-                not self.target_class.config_subdirectory
-                and not (
+                not self.target_class.config_subdirectory and
+                not (
                     file_name.endswith(".yaml") or file_name.endswith(".yml")
                 )
             ):

@@ -91,9 +91,14 @@ class ConfigMonitorTests(unittest.TestCase):
         monitor = ConfigFileMonitor(TestTarget, "/etc/foobar")
         monitor.file_path = os.path.dirname(__file__)
 
-        on_add = lambda: None
-        on_update = lambda: None
-        on_delete = lambda: None
+        def on_add(*args):
+            pass
+
+        def on_update(*args):
+            pass
+
+        def on_delete(*args):
+            pass
 
         monitor.start(on_add, on_update, on_delete)
 
@@ -126,9 +131,14 @@ class ConfigMonitorTests(unittest.TestCase):
         monitor = ConfigFileMonitor(TestTargetWithSubdir, "/etc/foobar")
         monitor.file_path = os.path.dirname(__file__)
 
-        on_add = lambda: None
-        on_update = lambda: None
-        on_delete = lambda: None
+        def on_add(*args):
+            pass
+
+        def on_update(*args):
+            pass
+
+        def on_delete(*args):
+            pass
 
         monitor.start(on_add, on_update, on_delete)
 

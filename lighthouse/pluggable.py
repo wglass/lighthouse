@@ -53,16 +53,16 @@ class Pluggable(Configurable):
 
             if not issubclass(plugin, cls):
                 logger.error(
-                    "Could not load plugin %s:"
-                    + " %s class is not subclass of %s",
+                    "Could not load plugin %s:" +
+                    " %s class is not subclass of %s",
                     entry_point.name, plugin.__class__.__name__, cls.__name__
                 )
                 continue
 
             if not plugin.validate_dependencies():
                 logger.error(
-                    "Could not load plugin %s:"
-                    + " %s class dependencies not met",
+                    "Could not load plugin %s:" +
+                    " %s class dependencies not met",
                     entry_point.name, plugin.__name__
                 )
                 continue

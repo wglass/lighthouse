@@ -81,9 +81,9 @@ class ZookeeperDiscovery(Discovery):
 
         if old_base_path and old_base_path != self.base_path:
             logger.critical(
-                "ZNode base path changed!"
-                + " Lighthouse will need to be restarted"
-                + " to watch the right znodes"
+                "ZNode base path changed!" +
+                " Lighthouse will need to be restarted" +
+                " to watch the right znodes"
             )
 
     def connect(self):
@@ -147,9 +147,9 @@ class ZookeeperDiscovery(Discovery):
 
         def should_stop():
             return (
-                znode_path not in self.stop_events
-                or self.stop_events[znode_path].is_set()
-                or self.shutdown.is_set()
+                znode_path not in self.stop_events or
+                self.stop_events[znode_path].is_set() or
+                self.shutdown.is_set()
             )
 
         while not should_stop():
