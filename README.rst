@@ -2,6 +2,14 @@ Lighthouse Service Discovery Tool
 ===================================
 
 .. image::
+    https://img.shields.io/pypi/v/lighthouse.svg
+    :target: PyPI_
+    :alt: Python Package Version
+.. image::
+    https://readthedocs.org/projects/lighthouse/badge/?version=latest
+    :alt: Documentation Status
+    :target: https://readthedocs.org/projects/lighthouse/?badge=latest
+.. image::
     https://travis-ci.org/wglass/lighthouse.svg?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/wglass/lighthouse
@@ -10,9 +18,9 @@ Lighthouse Service Discovery Tool
     :alt: Code Climate
     :target: https://codeclimate.com/github/wglass/lighthouse
 .. image::
-    https://readthedocs.org/projects/lighthouse/badge/?version=0.15.1
-    :alt: Documentation Status
-    :target: https://readthedocs.org/projects/lighthouse/?badge=0.15.1
+    https://codecov.io/github/wglass/lighthouse/coverage.svg?branch=master
+    :alt: Codecov.io
+    :target: https://codecov.io/github/wglass/lightouse?branch=master
 
 Lighthouse is a service node discovery system written in python, built with
 resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
