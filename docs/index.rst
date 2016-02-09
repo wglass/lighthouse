@@ -47,7 +47,6 @@ on GitHub.
 
 License
 ~~~~~~~
-\(c\) 2014-2015 William Glass
 
 Lighthouse is licensed under the terms of the MIT license.  See the LICENSE_
 file for more details.

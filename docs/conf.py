@@ -45,7 +45,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 project = u'lighthouse'
-copyright = u'2015, William Glass'
+copyright = u'2014-2016, William Glass'
 author = u'William Glass'
 
 version = release = lighthouse.__version__
