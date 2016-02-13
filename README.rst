@@ -26,7 +26,7 @@ Lighthouse Service Discovery Tool
 .. image::
    http://lighthouse.readthedocs.org/en/latest/_images/lighthouse.png
    :alt: Lighthouse
-   :align: left
+   :align: right
 
 Lighthouse is a service node discovery system written in python, built with
 resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
@@ -45,14 +45,14 @@ A lighthouse setup consists of three parts running locally on each node: a load
 balancer, the `lighthouse-writer` script and (usually) the `lighthouse-reporter`
 script.
 
-.. image::
-   http://lighthouse.readthedocs.org/en/latest/_images/soa_node.png
-   :alt: Diagram of a node
-   :align: right
-
 In a Lighthouse setup, no node's application code is aware of the existence of
 other nodes, they talk to a local port handled by an instance of the load
 balancer which in turn routes traffice among the various known other nodes.
+
+.. image::
+   http://lighthouse.readthedocs.org/en/latest/_images/soa_node.png
+   :alt: Diagram of a node
+   :align: center
 
 This local load balancer is automatically updated when nodes come and go
 via the `lighthouse-writer` script, which talks to the discovery method (e.g.
