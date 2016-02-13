@@ -22,12 +22,6 @@ Lighthouse Service Discovery Tool
     :alt: Codecov.io
     :target: https://codecov.io/github/wglass/lightouse?branch=master
 
-
-.. image::
-   http://lighthouse.readthedocs.org/en/latest/_images/lighthouse.png
-   :alt: Lighthouse
-   :align: right
-
 Lighthouse is a service node discovery system written in python, built with
 resilience, flexibility and ease-of-use in mind and inspired by Airbnb's
 SmartStack_ solution.  Out of the box it supports discovery via Zookeeper_ with
