@@ -5,7 +5,7 @@ Lighthouse Service Discovery Tool
 
 .. image:: /static/lighthouse.png
     :alt: Lighthouse
-    :align: right
+    :align: left
 
 ..
 
@@ -24,13 +24,13 @@ A lighthouse setup consists of three parts running locally on each node: a load
 balancer, the `lighthouse-writer` script and (usually) the `lighthouse-reporter`
 script.
 
+.. image:: /static/soa_node.png
+    :alt: Diagram of a node
+    :align: right
+
 In a Lighthouse setup, no node's application code is aware of the existence of
 other nodes, they talk to a local port handled by an instance of the load
 balancer which in turn routes traffic among the various known other nodes.
-
-.. image:: /static/soa_node.png
-    :alt: Diagram of a node
-    :align: center
 
 This local load balancer is automatically updated when nodes come and go
 via the `lighthouse-writer` script, which talks to the discovery method (e.g.
