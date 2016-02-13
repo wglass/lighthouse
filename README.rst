@@ -24,7 +24,7 @@ Lighthouse Service Discovery Tool
 
 
 .. image::
-   http://lighthouse.readthedocs.org/en/latest/_images/soa_node.png
+   http://lighthouse.readthedocs.org/en/latest/_images/lighthouse.png
    :alt: Lighthouse
    :align: left
 
