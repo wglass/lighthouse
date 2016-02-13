@@ -1,12 +1,12 @@
 Simple Web Cluster Example
 ==========================
 
+.. image:: /static/simple_example.png
+    :align: right
+
 In this example we'll construct a simple system with two clusters: a webapp
 cluster serving up some basic content and a cache redis cluster used in creating
 said content.
-
-.. image:: /static/simple_example.png
-    :align: center
 
 Creating the cache cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

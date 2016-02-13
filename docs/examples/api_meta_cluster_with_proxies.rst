@@ -1,6 +1,9 @@
 API Meta-Cluster Example
 ========================
 
+.. image:: /static/api_cluster.png
+    :align: right
+
 This example will demonstrate ACL-based routing where a single API is serviced
 by multiple clusters, as well as the proxies feature of the HAProxy balancer
 plugin.
@@ -13,10 +16,6 @@ The "sprockets" cluster will also communicate with a "partner" machine via a
 cluster of proxy nodes.  Regardless of how many nodes there are in the sprockets
 cluster and which nodes come and go, the only nodes to talk to the partner
 are the proxy nodes.
-
-
-.. image:: /static/api_cluster.png
-    :align: center
 
 
 Creating the partner "machine"
