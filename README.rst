@@ -13,10 +13,9 @@ Lighthouse Service Discovery Tool
     https://travis-ci.org/wglass/lighthouse.svg?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/wglass/lighthouse
-.. image::
-    https://codeclimate.com/github/wglass/lighthouse/badges/gpa.svg
-    :alt: Code Climate
-    :target: https://codeclimate.com/github/wglass/lighthouse
+.. image:: https://landscape.io/github/wglass/lighthouse/master/landscape.svg?style=flat
+   :alt: Code Health
+   :target: https://landscape.io/github/wglass/lighthouse/master
 .. image::
     https://codecov.io/github/wglass/lighthouse/coverage.svg?branch=master
     :alt: Codecov.io
